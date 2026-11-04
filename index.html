@@ -1,132 +1,244 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>woddwill</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
-<style>
-:root{
-  --bg:#E9EEF0; --surface:#F7F9FA; --ink:#14202B; --muted:#5B6B78; --line:#CBD6DB;
-  --focus:#2447F5;
-  --font:"Bricolage Grotesque","Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
-}
-@media (prefers-color-scheme:dark){
-  :root{--bg:#0F161C; --surface:#18222B; --ink:#EAF0F3; --muted:#8FA0AC; --line:#2A3945; --focus:#8AA2FF}
-}
-*{box-sizing:border-box;margin:0}
-html{background:var(--bg)}
-body{font-family:var(--font);color:var(--ink);background:var(--bg);min-height:100vh;line-height:1.5;
-  padding:clamp(20px,5vw,64px);max-width:1120px;margin:0 auto}
-header{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:24px;margin-bottom:clamp(28px,6vw,56px)}
-.greet{color:var(--muted);font-size:1rem;margin-bottom:8px}
-h1{font-size:clamp(2.6rem,9vw,5.5rem);font-weight:800;line-height:.95;letter-spacing:-.03em}
-.search{position:relative;width:min(100%,280px)}
-.search input{width:100%;font:inherit;font-size:1rem;color:var(--ink);background:var(--surface);
-  border:1.5px solid var(--line);border-radius:999px;padding:12px 44px 12px 18px}
-.search input::placeholder{color:var(--muted)}
-.search kbd{position:absolute;right:14px;top:50%;transform:translateY(-50%);font:inherit;font-size:.8rem;
-  color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:0 7px}
-:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>woddwill</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-gradient: radial-gradient(circle at 15% 20%, #1e1b4b, #09090b 45%, #050507 100%);
+      --card-bg: rgba(255, 255, 255, 0.03);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-hover-border: rgba(99, 102, 241, 0.4);
+      --card-hover-bg: rgba(255, 255, 255, 0.06);
+      --text-main: #f4f4f5;
+      --text-muted: #a1a1aa;
+      --accent: #6366f1;
+    }
 
-.grid{display:grid;grid-template-columns:repeat(6,1fr);gap:16px}
-.tile{--c:#2447F5;--on:#fff;position:relative;display:flex;flex-direction:column;justify-content:space-between;
-  min-height:240px;padding:26px;border-radius:28px;background:var(--c);color:var(--on);text-decoration:none;
-  grid-column:span 2;overflow:hidden;transition:transform .2s ease,border-radius .2s ease}
-.tile:nth-child(1){grid-column:span 4;min-height:300px}
-.tile:nth-child(2){grid-column:span 2}
-.tile:hover{transform:translateY(-4px);border-radius:20px 40px 20px 40px}
-.glyph{font-size:clamp(5rem,14vw,9rem);font-weight:800;line-height:.8;letter-spacing:-.05em;opacity:.22;
-  position:absolute;right:18px;top:18px;user-select:none}
-.tile h2{font-size:clamp(1.6rem,3.4vw,2.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.05}
-.tile p{margin-top:8px;max-width:30ch;opacity:.85;font-size:1rem}
-.go{margin-top:18px;align-self:flex-start;font-weight:600;font-size:.95rem;padding:8px 16px;border-radius:999px;
-  background:var(--on);color:var(--c)}
-.tile[hidden]{display:none}
-.empty{display:none;padding:40px 0;color:var(--muted);font-size:1.1rem}
-.empty.show{display:block}
-footer{margin-top:48px;color:var(--muted);font-size:.9rem}
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-@media(max-width:760px){
-  .grid{grid-template-columns:1fr}
-  .tile,.tile:nth-child(n){grid-column:auto;min-height:190px}
-}
-@media(prefers-reduced-motion:reduce){.tile{transition:none}.tile:hover{transform:none}}
-</style>
+    body {
+      min-height: 100vh;
+      background: var(--bg-gradient);
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2.5rem 1.5rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 860px;
+    }
+
+    header {
+      margin-bottom: 2.5rem;
+      text-align: left;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #818cf8;
+      background: rgba(99, 102, 241, 0.12);
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      padding: 0.3rem 0.75rem;
+      border-radius: 9999px;
+      margin-bottom: 0.85rem;
+    }
+
+    .badge-dot {
+      width: 6px;
+      height: 6px;
+      background: #4ade80;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #4ade80;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.4rem;
+    }
+
+    p.subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .app-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      padding: 1.3rem;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      text-decoration: none;
+      color: inherit;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+    }
+
+    .app-card:hover {
+      background: var(--card-hover-bg);
+      border-color: var(--card-hover-border);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.5), 0 0 20px -5px rgba(99, 102, 241, 0.15);
+    }
+
+    .icon-box {
+      flex-shrink: 0;
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #e4e4e7;
+      transition: all 0.22s ease;
+    }
+
+    .app-card:hover .icon-box {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .icon-box svg {
+      width: 22px;
+      height: 22px;
+      stroke-width: 1.8;
+    }
+
+    .card-info {
+      flex-grow: 1;
+    }
+
+    .card-info h2 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      margin-bottom: 0.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-info h2 .arrow {
+      opacity: 0;
+      transform: translateX(-4px);
+      transition: all 0.2s ease;
+      font-size: 0.9rem;
+      color: var(--accent);
+    }
+
+    .app-card:hover .card-info h2 .arrow {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .card-info p {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    footer {
+      margin-top: 3rem;
+      font-size: 0.75rem;
+      color: #52525b;
+      letter-spacing: 0.02em;
+    }
+  </style>
 </head>
 <body>
-<header>
-  <div>
-    <p class="greet" id="greet">Merhaba</p>
-   
-  </div>
-  <label class="search">
-    <input id="q" type="search" placeholder="Uygulama ara" aria-label="Uygulama ara" autocomplete="off">
-    <kbd aria-hidden="true">/</kbd>
-  </label>
-</header>
 
-<main>
-  <nav class="grid" id="grid" aria-label="Uygulamalar"></nav>
-  <p class="empty" id="empty">Eşleşen uygulama yok. Aramayı temizleyip tekrar dene.</p>
-</main>
-
-<footer id="foot"></footer>
-
-<script>
-/* Uygulamalarını buradan düzenle: name, desc, href (kendi adresin), color (kart rengi), on (yazı rengi) */
-const APPS = [
-  { name:"Kelime Kutusu",     desc:"",  href:"kelimekutusu/", color:"#2447F5", on:"#FFFFFF" },
-  { name:"Melvor",            desc:"",            href:"Melvor.html", color:"#F2B632", on:"#14202B" },
+  <div class="container">
+    <header>
+      <div class="badge">
+        <span class="badge-dot"></span>
   
-];
+      </div>
+      <h1></h1>
+      <p class="subtitle"></p>
+    </header>
 
-const grid = document.getElementById('grid');
-const q = document.getElementById('q');
-const empty = document.getElementById('empty');
-const lower = s => s.toLocaleLowerCase('tr');
+    <main class="grid">
+      <!-- 1. Melvor-->
+      <a href="Melvor.html" class="app-card">
+        <div class="icon-box">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+        <div class="card-info">
+          <h2>Melvor <span class="arrow">→</span></h2>
+          <p></p>
+        </div>
+      </a>
 
-APPS.forEach(a => {
-  const el = document.createElement('a');
-  el.className = 'tile';
-  el.href = a.href;
-  el.style.setProperty('--c', a.color);
-  el.style.setProperty('--on', a.on);
-  el.dataset.key = lower(a.name + ' ' + a.desc);
-  const glyph = document.createElement('span'); glyph.className = 'glyph'; glyph.setAttribute('aria-hidden','true'); glyph.textContent = a.name.charAt(0);
-  const box = document.createElement('div');
-  const h = document.createElement('h2'); h.textContent = a.name;
-  const p = document.createElement('p'); p.textContent = a.desc;
-  box.append(h, p);
-  const go = document.createElement('span'); go.className = 'go'; go.textContent = 'Aç';
-  el.append(glyph, box, go);
-  grid.appendChild(el);
-});
+      <!-- 2. Kelime Kutusu -->
+      <a href="kelimekutusu/" class="app-card">
+        <div class="icon-box">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+          </svg>
+        </div>
+        <div class="card-info">
+          <h2>Kelime Kutusu <span class="arrow">→</span></h2>
+          <p></p>
+        </div>
+      </a>
 
-q.addEventListener('input', () => {
-  const v = lower(q.value.trim());
-  let shown = 0;
-  grid.querySelectorAll('.tile').forEach(t => {
-    const ok = !v || t.dataset.key.includes(v);
-    t.hidden = !ok; if (ok) shown++;
-  });
-  empty.classList.toggle('show', shown === 0);
-});
-q.addEventListener('keydown', e => {
-  if (e.key === 'Enter') { const t = grid.querySelector('.tile:not([hidden])'); if (t) t.click(); }
-  if (e.key === 'Escape') { q.value = ''; q.dispatchEvent(new Event('input')); q.blur(); }
-});
-document.addEventListener('keydown', e => {
-  if (e.key === '/' && document.activeElement !== q) { e.preventDefault(); q.focus(); }
-});
+      <!-- 3. Yedek -->
+      <!-- İhtiyacınıza göre href="dosya-adiniz.html" yapabilirsiniz -->
+      <a href="#" class="app-card" style="opacity: 0.65;">
+        <div class="icon-box">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+          </svg>
+        </div>
+        <div class="card-info">
+          <h2>Yeni Uygulama <span class="arrow">→</span></h2>
+          <p>Geliştirilmekte olan bir sonraki kişisel araç.</p>
+        </div>
+      </a>
+    </main>
 
-const hr = new Date().getHours();
-document.getElementById('greet').textContent =
-  hr < 6 ? 'İyi geceler' : hr < 12 ? 'Günaydın' : hr < 18 ? 'İyi günler' : 'İyi akşamlar';
-document.getElementById('foot').textContent =
-  new Date().toLocaleDateString('tr-TR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
-</script>
+    <footer>
+      <span>&bull; Kişisel Portal</span>
+    </footer>
+  </div>
+
 </body>
 </html>

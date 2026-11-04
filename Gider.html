@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Gider ve Ekstre Takip Uygulaması</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.3);
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-900 pb-28">
+
+  <!-- ÜST KONTROL PANELİ (SADE & MOBİL UYUMLU) -->
+  <header class="sticky top-0 z-30 bg-white/95 backdrop-blur-lg border-b border-slate-200/80">
+    <div class="max-w-2xl mx-auto px-4 py-2.5 flex items-center justify-center">
+      <!-- Hesap Dönemi Seçici -->
+      <div class="flex items-center justify-between w-full sm:w-auto gap-2 bg-slate-100/90 p-1 rounded-2xl border border-slate-200/70">
+        <button onclick="changeMonth(-1)" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white hover:bg-indigo-50 text-slate-700 transition shadow-sm active:scale-95" title="Önceki Ay">
+          <i data-lucide="chevron-left" class="w-4 h-4"></i>
+        </button>
+        <div class="px-4 py-0.5 text-center min-w-[150px]">
+          <div class="text-[9px] uppercase tracking-widest font-bold text-indigo-600">
+            Hesap Dönemi
+          </div>
+          <div id="headerSelectedMonth" class="text-sm font-extrabold text-slate-900 flex items-center justify-center gap-1.5">
+            <i data-lucide="calendar" class="w-3.5 h-3.5 text-indigo-500 shrink-0"></i>
+            <span>Ekim 2026</span>
+          </div>
+        </div>
+        <button onclick="changeMonth(1)" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white hover:bg-indigo-50 text-slate-700 transition shadow-sm active:scale-95" title="Sonraki Ay">
+          <i data-lucide="chevron-right" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ANA İÇERİK ALANI -->
+  <main class="max-w-2xl mx-auto px-3.5 pt-3.5 space-y-4">
+
+    <!-- 2 KOMPAKT ÖZET KARTI -->
+    <div id="summaryCardsContainer" class="grid grid-cols-2 gap-2.5"></div>
+
+    <!-- SEKME 1: HARCAMALAR (SADE LİSTE) -->
+    <div id="tabContent-dashboard" class="space-y-3">
+      <div class="flex items-center justify-between px-1">
+        <h2 id="listHeading" class="text-xs font-extrabold uppercase tracking-wider text-slate-500"></h2>
+        <span id="dashboardItemCount" class="text-[11px] font-semibold text-slate-400"></span>
+      </div>
+      <div id="expensesListContainer" class="space-y-2"></div>
+    </div>
+
+    <!-- SEKME 2: İSTATİSTİK, GRAFİKLER & FİLTRE BÖLÜMÜ -->
+    <div id="tabContent-analytics" class="hidden space-y-4">
+      
+      <!-- 6 Aylık Ödeme Projeksiyonu ve Kategori Dağılımı -->
+      <div class="grid grid-cols-1 gap-4">
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-1.5">
+              <i data-lucide="bar-chart-3" class="w-4 h-4 text-indigo-500"></i>
+              6 Aylık Ödeme Projeksiyonu
+            </h3>
+            <div class="flex items-center gap-2.5 text-[10px]">
+              <span class="flex items-center gap-1 text-slate-600"><span class="w-2 h-2 rounded-sm bg-emerald-500 inline-block"></span>Nakit</span>
+              <span class="flex items-center gap-1 text-slate-600"><span class="w-2 h-2 rounded-sm bg-blue-500 inline-block"></span>Tek</span>
+              <span class="flex items-center gap-1 text-slate-600"><span class="w-2 h-2 rounded-sm bg-indigo-600 inline-block"></span>Taksit</span>
+            </div>
+          </div>
+          <div id="barChartContainer" class="pt-1"></div>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-1.5">
+              <i data-lucide="pie-chart" class="w-4 h-4 text-indigo-500"></i>
+              Kategori Dağılımı
+            </h3>
+            <span id="categoryScopeBadge" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100"></span>
+          </div>
+          <div id="donutChartContainer"></div>
+        </div>
+      </div>
+
+      <!-- İSTATİSTİK FİLTRE VE DETAYLI İNCELEME BÖLÜMÜ -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm space-y-3.5">
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-1.5">
+            <i data-lucide="sliders-horizontal" class="w-4 h-4 text-indigo-600"></i>
+            <h3 id="analyticsFilterHeading" class="text-xs sm:text-sm font-bold text-slate-900">Harcama Filtresi ve Analizi</h3>
+          </div>
+          <div class="inline-flex rounded-xl bg-slate-100 p-0.5">
+            <button id="viewBtn-billing" onclick="setViewMode('billing')" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition">
+              Ekstre
+            </button>
+            <button id="viewBtn-transaction" onclick="setViewMode('transaction')" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition">
+              İşlem Tarihi
+            </button>
+          </div>
+        </div>
+
+        <!-- Filtre Kontrolleri (Zaman Kapsamı, Arama, Kategori, Yöntem) -->
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
+          <div class="relative sm:col-span-1">
+            <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+            <input id="searchInput" type="text" oninput="handleFilterChange()" placeholder="Harcama ara..." class="w-full pl-8 pr-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+          <div>
+            <select id="analyticsPeriodScope" onchange="handleFilterChange()" class="w-full px-2.5 py-2 text-xs font-semibold rounded-xl bg-indigo-50/80 text-indigo-900 border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="month">Sadece Bu Ay</option>
+              <option value="year">Tüm Yıl</option>
+              <option value="all">Tüm Zamanlar</option>
+            </select>
+          </div>
+          <div>
+            <select id="filterCategorySelect" onchange="handleFilterChange()" class="w-full px-2.5 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="all">Tüm Kategoriler</option>
+            </select>
+          </div>
+          <div>
+            <select id="filterMethodSelect" onchange="handleFilterChange()" class="w-full px-2.5 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="all">Tüm Yöntemler</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Filtre Sonuç Özeti Barı -->
+        <div class="flex items-center justify-between px-3 py-2.5 rounded-xl bg-indigo-50/70 border border-indigo-100">
+          <div class="flex items-center gap-2">
+            <span class="text-[11px] font-semibold text-indigo-900">Filtre Toplamı:</span>
+            <span id="filteredCountBadge" class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-white text-indigo-600 border border-indigo-200/60">0 kayıt</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span id="filteredTotalAmount" class="text-sm font-extrabold text-indigo-700">₺0,00</span>
+            <button id="resetFiltersBtn" onclick="resetAnalyticsFilters()" class="hidden text-[11px] font-bold text-rose-600 hover:underline ml-1">Temizle</button>
+          </div>
+        </div>
+
+        <!-- Filtrelenmiş Harcama Listesi -->
+        <div id="analyticsFilteredList" class="space-y-2 max-h-80 overflow-y-auto pr-0.5"></div>
+      </div>
+    </div>
+
+    <!-- SEKME 3: KREDİ KARTLARIM -->
+    <div id="tabContent-cards" class="hidden space-y-3.5">
+      <div class="flex items-center justify-between gap-4 bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm">
+        <h2 class="text-xs sm:text-sm font-bold text-slate-900">Kredi Kartlarım</h2>
+        <button onclick="openNewCardModal()" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white shadow-sm transition">
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+          <span>Yeni Kart</span>
+        </button>
+      </div>
+      <div id="cardsGridContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+    </div>
+
+  </main>
+
+  <!-- SAĞ ALT KOMPAKT GİDER EKLEME BUTONU (FAB) -->
+  <button onclick="openNewExpenseModal()" aria-label="Harcama Ekle" class="fixed bottom-20 right-4 z-40 flex items-center gap-1.5 px-3.5 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white shadow-lg shadow-indigo-600/30 transition">
+    <i data-lucide="plus" class="w-5 h-5 stroke-[2.5]"></i>
+    <span class="text-xs font-bold pr-0.5">Gider Ekle</span>
+  </button>
+
+  <!-- ALT GEZİNME ÇUBUĞU -->
+  <nav class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-slate-200/80">
+    <div class="max-w-md mx-auto px-3 py-1.5 grid grid-cols-3 gap-2">
+      <button id="tabBtn-dashboard" onclick="switchTab('dashboard')" class="flex flex-col items-center justify-center gap-0.5 py-1.5 px-3 rounded-xl transition">
+        <i data-lucide="layers" class="w-4 h-4"></i>
+        <span class="text-[10px] font-bold">Harcamalar</span>
+      </button>
+      <button id="tabBtn-analytics" onclick="switchTab('analytics')" class="flex flex-col items-center justify-center gap-0.5 py-1.5 px-3 rounded-xl transition">
+        <i data-lucide="pie-chart" class="w-4 h-4"></i>
+        <span class="text-[10px] font-bold">İstatistik</span>
+      </button>
+      <button id="tabBtn-cards" onclick="switchTab('cards')" class="flex flex-col items-center justify-center gap-0.5 py-1.5 px-3 rounded-xl transition">
+        <i data-lucide="credit-card" class="w-4 h-4"></i>
+        <span id="cardsTabCount" class="text-[10px] font-bold">Kartlarım</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- MODAL: HARCAMA EKLE / DÜZENLE -->
+  <div id="expenseModal" class="fixed inset-0 z-50 hidden items-center justify-center p-3.5 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white w-full max-w-md rounded-2xl border border-slate-200 shadow-2xl overflow-hidden">
+      <div class="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
+        <h3 id="expenseModalTitle" class="text-sm font-bold text-slate-900">Yeni Harcama Ekle</h3>
+        <button onclick="closeExpenseModal()" class="text-slate-400 hover:text-slate-600 text-sm font-bold px-2 py-1 rounded-lg">✕</button>
+      </div>
+      <form onsubmit="handleSaveExpense(event)" class="p-5 space-y-3.5 max-h-[82vh] overflow-y-auto">
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Açıklama *</label>
+          <input id="expTitle" type="text" required placeholder="Örn: Market alışverişi, Fatura..." class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Tutar (TL) *</label>
+            <input id="expAmount" type="number" step="0.01" min="1" required oninput="updateLiveBillingPreview()" placeholder="0.00" class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Tarih *</label>
+            <input id="expDate" type="date" required onchange="updateLiveBillingPreview()" class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Kategori</label>
+          <select id="expCategory" class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Ödeme Yöntemi</label>
+            <select id="expMethod" onchange="handleMethodSelectChange()" class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Taksit</label>
+            <select id="expInstallments" onchange="updateLiveBillingPreview()" class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="1">Tek Çekim (1)</option>
+              <option value="2">2 Taksit</option>
+              <option value="3">3 Taksit</option>
+              <option value="4">4 Taksit</option>
+              <option value="6">6 Taksit</option>
+              <option value="9">9 Taksit</option>
+              <option value="12">12 Taksit</option>
+            </select>
+          </div>
+        </div>
+        <div id="liveBillingPreviewBox" class="p-3 rounded-xl border text-xs space-y-1"></div>
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Not (İsteğe Bağlı)</label>
+          <input id="expNote" type="text" placeholder="Ek detay..." class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+          <button type="button" onclick="closeExpenseModal()" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-600">İptal</button>
+          <button type="submit" class="px-5 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-md">Kaydet</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: KREDİ KARTI EKLE / DÜZENLE -->
+  <div id="cardModal" class="fixed inset-0 z-50 hidden items-center justify-center p-3.5 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white w-full max-w-md rounded-2xl border border-slate-200 shadow-2xl overflow-hidden">
+      <div class="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
+        <h3 id="cardModalTitle" class="text-sm font-bold text-slate-900">Yeni Kredi Kartı Ekle</h3>
+        <button onclick="closeCardModal()" class="text-slate-400 hover:text-slate-600 text-sm font-bold px-2 py-1 rounded-lg">✕</button>
+      </div>
+      <form onsubmit="handleSaveCard(event)" class="p-5 space-y-3.5">
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Kart Adı *</label>
+          <input id="cardName" type="text" required placeholder="Örn: Bonus, Axess..." class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Banka Adı</label>
+          <input id="cardBank" type="text" placeholder="Örn: Garanti BBVA..." class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Kesim Günü (1-31) *</label>
+            <input id="cardCutoff" type="number" min="1" max="31" required class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Kart Limiti (TL)</label>
+            <input id="cardLimit" type="number" min="1000" step="1000" class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Kart Rengi</label>
+          <div id="cardColorsContainer" class="grid grid-cols-5 gap-2"></div>
+        </div>
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+          <button type="button" onclick="closeCardModal()" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-600">İptal</button>
+          <button type="submit" class="px-5 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-md">Kaydet</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: SİLME ONAYI -->
+  <div id="deleteModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white w-full max-w-xs rounded-2xl border border-slate-200 p-5 shadow-2xl space-y-3.5">
+      <div class="flex items-center gap-2.5 text-rose-600">
+        <div class="p-2 rounded-xl bg-rose-500/10"><i data-lucide="alert-circle" class="w-5 h-5"></i></div>
+        <h3 class="text-sm font-bold">Kaydı Sil?</h3>
+      </div>
+      <p id="deleteModalText" class="text-xs text-slate-600"></p>
+      <div class="flex items-center justify-end gap-2 pt-1">
+        <button onclick="closeDeleteModal()" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-700">Vazgeç</button>
+        <button onclick="confirmDeleteAction()" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white">Sil</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- UYGULAMA JAVASCRIPT MANTIĞI & CLOUDFLARE BULUT MOTORU -->
+  <script>
+    const CLOUDFLARE_WORKER_URL = "https://gider-takip.woddwill.workers.dev/";
+    const CLOUDFLARE_SECRET = "giderapp123";
+
+    const CATEGORIES = [
+      { id: 'market', name: 'Market & Mutfak', icon: 'shopping-bag', color: '#10b981', bg: 'bg-emerald-500/10', text: 'text-emerald-600', border: 'border-emerald-500/20' },
+      { id: 'fatura', name: 'Faturalar & Abonelik', icon: 'zap', color: '#f59e0b', bg: 'bg-amber-500/10', text: 'text-amber-600', border: 'border-amber-500/20' },
+      { id: 'teknoloji', name: 'Teknoloji & Elektronik', icon: 'smartphone', color: '#3b82f6', bg: 'bg-blue-500/10', text: 'text-blue-600', border: 'border-blue-500/20' },
+      { id: 'yeme_icme', name: 'Yemek Siparişi', icon: 'utensils', color: '#ef4444', bg: 'bg-rose-500/10', text: 'text-rose-600', border: 'border-rose-500/20' },
+      { id: 'ulasim', name: 'Ulaşım & Akaryakıt', icon: 'car', color: '#8b5cf6', bg: 'bg-violet-500/10', text: 'text-violet-600', border: 'border-violet-500/20' },
+      { id: 'saglik', name: 'Kıyafet & Kişisel Bakım', icon: 'heart-pulse', color: '#ec4899', bg: 'bg-pink-500/10', text: 'text-pink-600', border: 'border-pink-500/20' },
+      { id: 'eglence', name: 'Oyun & Hobi', icon: 'film', color: '#6366f1', bg: 'bg-indigo-500/10', text: 'text-indigo-600', border: 'border-indigo-500/20' },
+      { id: 'diger', name: 'Diğer Harcamalar', icon: 'more-horizontal', color: '#64748b', bg: 'bg-slate-500/10', text: 'text-slate-600', border: 'border-slate-500/20' },
+    ];
+
+    const CARD_GRADIENTS = [
+      { id: 'indigo', name: 'Gece Mavisi', classes: 'from-indigo-600 via-blue-700 to-slate-900' },
+      { id: 'emerald', name: 'Zümrüt Yeşili', classes: 'from-emerald-600 via-teal-700 to-slate-900' },
+      { id: 'rose', name: 'Yakut Kırmızısı', classes: 'from-rose-600 via-pink-700 to-slate-900' },
+      { id: 'amber', name: 'Altın Sarısı', classes: 'from-amber-500 via-orange-600 to-slate-900' },
+      { id: 'purple', name: 'Kraliyet Moru', classes: 'from-purple-600 via-violet-800 to-slate-900' },
+    ];
+
+    const MONTHS_TR = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+
+    function getCurrentLocalMonthKey() {
+      const now = new Date();
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    let cards = [];
+    let expenses = [];
+    let selectedMonth = getCurrentLocalMonthKey();
+    let activeTab = 'dashboard';
+    let viewMode = 'billing';
+    let editingExpenseId = null;
+    let editingCardId = null;
+    let selectedCardColor = 'indigo';
+    let deleteTarget = null;
+
+    async function fetchFromCloud() {
+      const localData = localStorage.getItem('gider_yedek_veri');
+      if (localData) {
+        try {
+          const parsed = JSON.parse(localData);
+          if (Array.isArray(parsed.cards)) cards = parsed.cards;
+          if (Array.isArray(parsed.expenses)) expenses = parsed.expenses;
+          populateSelectDropdowns();
+          renderAll();
+        } catch (e) {}
+      }
+
+      if (!CLOUDFLARE_WORKER_URL || CLOUDFLARE_WORKER_URL.includes("KULLANICI_ADINIZ")) return;
+
+      try {
+        const res = await fetch(CLOUDFLARE_WORKER_URL, {
+          method: 'GET',
+          headers: { 'X-Custom-Auth': CLOUDFLARE_SECRET }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && Array.isArray(data.cards) && Array.isArray(data.expenses)) {
+            cards = data.cards;
+            expenses = data.expenses;
+            localStorage.setItem('gider_yedek_veri', JSON.stringify({ cards, expenses }));
+            populateSelectDropdowns();
+            renderAll();
+          }
+        }
+      } catch (err) {
+        console.error("Buluttan veri çekme hatası:", err);
+      }
+    }
+
+    async function saveToCloud() {
+      localStorage.setItem('gider_yedek_veri', JSON.stringify({ cards, expenses }));
+      if (!CLOUDFLARE_WORKER_URL || CLOUDFLARE_WORKER_URL.includes("KULLANICI_ADINIZ")) return;
+
+      try {
+        await fetch(CLOUDFLARE_WORKER_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Custom-Auth': CLOUDFLARE_SECRET
+          },
+          body: JSON.stringify({ cards, expenses })
+        });
+      } catch (err) {
+        console.error("Buluta kayıt hatası:", err);
+      }
+    }
+
+    function formatCurrency(amount) {
+      return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount || 0);
+    }
+
+    function formatMonthKey(monthKey) {
+      if (!monthKey) return '';
+      const [year, month] = monthKey.split('-').map(Number);
+      return `${MONTHS_TR[month - 1]} ${year}`;
+    }
+
+    function addMonthsToKey(monthKey, offset) {
+      const [year, month] = monthKey.split('-').map(Number);
+      const date = new Date(year, month - 1 + offset, 1);
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    function formatDateTR(dateStr) {
+      if (!dateStr) return '';
+      const [y, m, d] = dateStr.split('-').map(Number);
+      return `${d} ${MONTHS_TR[m - 1]} ${y}`;
+    }
+
+    function getCategoryInfo(catId) {
+      return CATEGORIES.find(c => c.id === catId) || CATEGORIES[CATEGORIES.length - 1];
+    }
+
+    function getCardInfo(cardId) {
+      return cards.find(c => c.id === cardId);
+    }
+
+    function calculateInitialBillingMonth(dateStr, paymentMethod) {
+      const [year, month, day] = dateStr.split('-').map(Number);
+      const baseMonthKey = `${year}-${String(month).padStart(2, '0')}`;
+      if (paymentMethod === 'cash') return { firstMonthKey: baseMonthKey, isShiftedNextMonth: false, cutoffDay: null, reason: 'Nakit harcama.' };
+      const card = getCardInfo(paymentMethod);
+      if (!card) return { firstMonthKey: baseMonthKey, isShiftedNextMonth: false, cutoffDay: null, reason: 'Kart bulunamadı.' };
+      const cutoffDay = Number(card.cutoffDay);
+      if (day > cutoffDay) {
+        const nextMonthKey = addMonthsToKey(baseMonthKey, 1);
+        return { firstMonthKey: nextMonthKey, isShiftedNextMonth: true, cutoffDay, reason: `Kesim günü (${cutoffDay}) geçtiği için gelecek aya aktarıldı.` };
+      } else {
+        return { firstMonthKey: baseMonthKey, isShiftedNextMonth: false, cutoffDay, reason: `Bu ayın hesabına eklendi.` };
+      }
+    }
+
+    function getAllBillingEntries() {
+      const entries = [];
+      expenses.forEach(exp => {
+        const totalAmount = Number(exp.amount) || 0;
+        const count = exp.paymentMethod === 'cash' ? 1 : Math.max(1, Number(exp.installments) || 1);
+        const installmentAmount = totalAmount / count;
+        const calc = calculateInitialBillingMonth(exp.date, exp.paymentMethod);
+
+        for (let i = 0; i < count; i++) {
+          const targetMonthKey = addMonthsToKey(calc.firstMonthKey, i);
+          entries.push({
+            entryId: `${exp.id}_inst_${i + 1}`,
+            expenseId: exp.id,
+            title: exp.title,
+            note: exp.note,
+            originalDate: exp.date,
+            originalMonthKey: exp.date.slice(0, 7),
+            billingMonthKey: targetMonthKey,
+            totalAmount,
+            installmentAmount,
+            installmentIndex: i + 1,
+            installmentCount: count,
+            category: exp.category,
+            paymentMethod: exp.paymentMethod,
+            isShiftedFirstMonth: calc.isShiftedNextMonth,
+            cutoffDay: calc.cutoffDay,
+            billingReason: calc.reason
+          });
+        }
+      });
+      return entries.sort((a, b) => b.originalDate.localeCompare(a.originalDate));
+    }
+
+    function changeMonth(offset) {
+      selectedMonth = addMonthsToKey(selectedMonth, offset);
+      renderAll();
+    }
+
+    function switchTab(tab) {
+      activeTab = tab;
+      ['dashboard', 'analytics', 'cards'].forEach(t => {
+        const btn = document.getElementById(`tabBtn-${t}`);
+        const content = document.getElementById(`tabContent-${t}`);
+        if (btn && content) {
+          if (t === tab) {
+            btn.className = 'flex flex-col items-center justify-center gap-0.5 py-1.5 px-3 rounded-xl transition bg-indigo-50 text-indigo-600';
+            content.classList.remove('hidden');
+          } else {
+            btn.className = 'flex flex-col items-center justify-center gap-0.5 py-1.5 px-3 rounded-xl transition text-slate-500 hover:bg-slate-100';
+            content.classList.add('hidden');
+          }
+        }
+      });
+      renderAll();
+    }
+
+    function setViewMode(mode) {
+      viewMode = mode;
+      renderAll();
+    }
+
+    function handleFilterChange() {
+      renderAll();
+    }
+
+    function resetAnalyticsFilters() {
+      const sInput = document.getElementById('searchInput');
+      const cSelect = document.getElementById('filterCategorySelect');
+      const mSelect = document.getElementById('filterMethodSelect');
+      const pScope = document.getElementById('analyticsPeriodScope');
+      if (sInput) sInput.value = '';
+      if (cSelect) cSelect.value = 'all';
+      if (mSelect) mSelect.value = 'all';
+      if (pScope) pScope.value = 'month';
+      renderAll();
+    }
+
+    function populateSelectDropdowns() {
+      const catFilter = document.getElementById('filterCategorySelect');
+      if (catFilter) {
+        const currentVal = catFilter.value || 'all';
+        catFilter.innerHTML = `<option value="all">Tüm Kategoriler</option>` + CATEGORIES.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        catFilter.value = currentVal;
+      }
+      const expCat = document.getElementById('expCategory');
+      if (expCat) expCat.innerHTML = CATEGORIES.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+
+      const methodFilter = document.getElementById('filterMethodSelect');
+      if (methodFilter) {
+        const currentVal = methodFilter.value || 'all';
+        methodFilter.innerHTML = `<option value="all">Tüm Yöntemler</option><option value="cash">💵 Sadece Nakit</option>` + cards.map(c => `<option value="${c.id}">💳 ${c.name}</option>`).join('');
+        methodFilter.value = currentVal;
+      }
+      const expMethod = document.getElementById('expMethod');
+      if (expMethod) expMethod.innerHTML = `<option value="cash">💵 Nakit / Banka Kartı</option>` + cards.map(c => `<option value="${c.id}">💳 ${c.name} (Kesim: ${c.cutoffDay})</option>`).join('');
+    }
+
+    function createExpenseRowHTML(item, mode) {
+      const cat = getCategoryInfo(item.category);
+      const card = item.paymentMethod !== 'cash' ? getCardInfo(item.paymentMethod) : null;
+      const displayAmount = mode === 'billing' ? item.installmentAmount : item.totalAmount;
+
+      return `
+        <div class="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between gap-2.5">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="w-9 h-9 rounded-xl ${cat.bg} ${cat.text} border ${cat.border} flex items-center justify-center shrink-0">
+              <i data-lucide="${cat.icon}" class="w-4 h-4"></i>
+            </div>
+            <div class="min-w-0">
+              <div class="flex items-center gap-1.5">
+                <h4 class="font-bold text-xs sm:text-sm text-slate-900 truncate">${item.title}</h4>
+                ${item.installmentCount > 1 ? `<span class="px-1.5 py-0.5 text-[9px] font-bold rounded-md bg-indigo-50 text-indigo-600 shrink-0">${mode === 'billing' ? `${item.installmentIndex}/${item.installmentCount}` : `${item.installmentCount} Taksit`}</span>` : ''}
+              </div>
+              <div class="text-[10px] text-slate-400 flex items-center gap-1 truncate mt-0.5">
+                <span>${formatDateTR(item.originalDate)}</span>
+                <span>•</span>
+                <span class="font-medium text-slate-500">${item.paymentMethod === 'cash' ? 'Nakit' : (card ? card.name : 'Kart')}</span>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <div class="text-right mr-1">
+              <div class="text-xs sm:text-sm font-extrabold text-slate-900">${formatCurrency(displayAmount)}</div>
+            </div>
+            <button onclick="openEditExpenseModal('${item.expenseId}')" class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>
+            <button onclick="openDeleteModal('expense', '${item.expenseId}')" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderAll() {
+      const headerMonthEl = document.getElementById('headerSelectedMonth');
+      if (headerMonthEl) headerMonthEl.innerHTML = `<i data-lucide="calendar" class="w-3.5 h-3.5 text-indigo-500 shrink-0"></i><span>${formatMonthKey(selectedMonth)}</span>`;
+
+      const cardsCountEl = document.getElementById('cardsTabCount');
+      if (cardsCountEl) cardsCountEl.textContent = `Kartlarım (${cards.length})`;
+
+      const allEntries = getAllBillingEntries();
+      const currentMonthEntries = allEntries.filter(e => e.billingMonthKey === selectedMonth);
+
+      const totalBilling = currentMonthEntries.reduce((acc, item) => acc + item.installmentAmount, 0);
+      const futureDebt = allEntries.filter(e => e.billingMonthKey > selectedMonth).reduce((acc, cur) => acc + cur.installmentAmount, 0);
+
+      // Üstte Sadece 2 Ana Özet Kartı (Bu Ay Ödenecek & Gelecek Aylar)
+      const summaryContainer = document.getElementById('summaryCardsContainer');
+      if (summaryContainer) {
+        summaryContainer.innerHTML = `
+          <div class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Bu Ay Ödenecek</span>
+            <div class="mt-1 text-base sm:text-xl font-extrabold text-slate-900 truncate">${formatCurrency(totalBilling)}</div>
+          </div>
+          <div class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Gelecek Aylar</span>
+            <div class="mt-1 text-base sm:text-xl font-extrabold text-amber-600 truncate">${formatCurrency(futureDebt)}</div>
+          </div>
+        `;
+      }
+
+      renderDashboard(currentMonthEntries);
+      renderAnalytics(allEntries, currentMonthEntries, totalBilling);
+      renderCardsTab(allEntries, currentMonthEntries);
+      lucide.createIcons();
+    }
+
+    function getCategoryBreakdown(entriesList, totalAmount) {
+      const map = {};
+      CATEGORIES.forEach(c => { map[c.id] = { ...c, amount: 0, count: 0 }; });
+      entriesList.forEach(item => {
+        const val = item.installmentAmount ?? item.totalAmount ?? 0;
+        if (!map[item.category]) map.diger.amount += val;
+        else map[item.category].amount += val;
+      });
+      const total = totalAmount || 1;
+      return Object.values(map).filter(c => c.amount > 0).map(c => ({ ...c, percentage: (c.amount / total) * 100 })).sort((a, b) => b.amount - a.amount);
+    }
+
+    function renderDashboard(currentMonthEntries) {
+      const listHeading = document.getElementById('listHeading');
+      const countEl = document.getElementById('dashboardItemCount');
+      if (listHeading) listHeading.textContent = `${formatMonthKey(selectedMonth)} Giderleri`;
+      if (countEl) countEl.textContent = `${currentMonthEntries.length} işlem`;
+
+      const listContainer = document.getElementById('expensesListContainer');
+      if (!listContainer) return;
+
+      if (currentMonthEntries.length === 0) {
+        listContainer.innerHTML = `
+          <div class="bg-white rounded-2xl border border-slate-200/80 p-8 text-center space-y-2">
+            <i data-lucide="inbox" class="w-7 h-7 text-slate-300 mx-auto"></i>
+            <p class="text-xs text-slate-400">Bu dönem için kayıtlı harcama bulunmuyor.</p>
+          </div>`;
+      } else {
+        listContainer.innerHTML = currentMonthEntries.map(item => createExpenseRowHTML(item, 'billing')).join('');
+      }
+    }
+
+    function renderAnalytics(allEntries, currentMonthEntries, totalBilling) {
+      // 1. 6 Aylık Projeksiyon Çubuk Grafiği
+      const months = [];
+      for (let offset = -1; offset <= 4; offset++) {
+        const mKey = addMonthsToKey(selectedMonth, offset);
+        const mEntries = allEntries.filter(e => e.billingMonthKey === mKey);
+        let cash = 0, cardSingle = 0, cardInstallment = 0;
+        mEntries.forEach(e => {
+          if (e.paymentMethod === 'cash') cash += e.installmentAmount;
+          else if (e.installmentCount > 1) cardInstallment += e.installmentAmount;
+          else cardSingle += e.installmentAmount;
+        });
+        const [y, m] = mKey.split('-').map(Number);
+        months.push({ monthKey: mKey, shortLabel: `${MONTHS_TR[m - 1].slice(0, 3)} '${String(y).slice(2)}`, cash, cardSingle, cardInstallment, total: cash + cardSingle + cardInstallment });
+      }
+
+      const maxVal = Math.max(...months.map(m => m.total), 1000);
+      const barChartContainer = document.getElementById('barChartContainer');
+      if (barChartContainer) {
+        barChartContainer.innerHTML = `
+          <div class="grid grid-cols-6 gap-2 items-end h-36 pt-4 px-1 border-b border-slate-200">
+            ${months.map(m => `
+              <div onclick="selectedMonth='${m.monthKey}'; renderAll();" class="flex flex-col items-center h-full justify-end group cursor-pointer">
+                <div class="text-[9px] font-bold mb-1 ${m.monthKey === selectedMonth ? 'text-indigo-600' : 'text-slate-400'}">${m.total > 0 ? `${(m.total / 1000).toFixed(1)}k` : '0'}</div>
+                <div class="w-full max-w-[26px] rounded-t-md overflow-hidden flex flex-col justify-end" style="height: ${Math.max(4, (m.total / maxVal) * 100)}%">
+                  <div style="height: ${m.total > 0 ? (m.cardInstallment / m.total) * 100 : 0}%" class="w-full bg-indigo-600"></div>
+                  <div style="height: ${m.total > 0 ? (m.cardSingle / m.total) * 100 : 0}%" class="w-full bg-blue-500"></div>
+                  <div style="height: ${m.total > 0 ? (m.cash / m.total) * 100 : 0}%" class="w-full bg-emerald-500"></div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+          <div class="grid grid-cols-6 gap-2 pt-2 text-center">
+            ${months.map(m => `<button onclick="selectedMonth='${m.monthKey}'; renderAll();" class="text-[10px] font-bold py-1 rounded-lg ${m.monthKey === selectedMonth ? 'bg-indigo-600 text-white' : 'text-slate-600'}">${m.shortLabel}</button>`).join('')}
+          </div>
+        `;
+      }
+
+      // KAPSAM VE ZAMAN DÖNEMİ AYARLARI
+      const selectedYear = selectedMonth.split('-')[0];
+      const periodScopeEl = document.getElementById('analyticsPeriodScope');
+      const periodScope = periodScopeEl ? periodScopeEl.value : 'month';
+
+      if (periodScopeEl && periodScopeEl.options[1]) {
+        periodScopeEl.options[1].textContent = `${selectedYear} Yılı`;
+      }
+
+      const btnBilling = document.getElementById('viewBtn-billing');
+      const btnTrans = document.getElementById('viewBtn-transaction');
+      const filterHeading = document.getElementById('analyticsFilterHeading');
+      const categoryScopeBadge = document.getElementById('categoryScopeBadge');
+
+      let periodLabel = formatMonthKey(selectedMonth);
+      if (periodScope === 'year') periodLabel = `${selectedYear} Yılı`;
+      else if (periodScope === 'all') periodLabel = 'Tüm Zamanlar';
+
+      if (categoryScopeBadge) {
+        categoryScopeBadge.textContent = periodLabel;
+      }
+
+      if (viewMode === 'billing') {
+        if (btnBilling) btnBilling.className = 'px-2.5 py-1 rounded-lg text-[11px] font-semibold transition bg-white text-indigo-600 shadow-sm';
+        if (btnTrans) btnTrans.className = 'px-2.5 py-1 rounded-lg text-[11px] font-semibold transition text-slate-500';
+        if (filterHeading) filterHeading.textContent = `${periodLabel} Gider Filtresi`;
+      } else {
+        if (btnTrans) btnTrans.className = 'px-2.5 py-1 rounded-lg text-[11px] font-semibold transition bg-white text-indigo-600 shadow-sm';
+        if (btnBilling) btnBilling.className = 'px-2.5 py-1 rounded-lg text-[11px] font-semibold transition text-slate-500';
+        if (filterHeading) filterHeading.textContent = `${periodLabel} İşlem Filtresi`;
+      }
+
+      // Kapsama Göre Kaynak Veriyi Hazırlama
+      let sourceList = [];
+      if (viewMode === 'billing') {
+        if (periodScope === 'month') {
+          sourceList = allEntries.filter(e => e.billingMonthKey === selectedMonth);
+        } else if (periodScope === 'year') {
+          sourceList = allEntries.filter(e => e.billingMonthKey.startsWith(selectedYear));
+        } else {
+          sourceList = allEntries;
+        }
+      } else {
+        const transList = expenses.map(exp => {
+          const calc = calculateInitialBillingMonth(exp.date, exp.paymentMethod);
+          const count = exp.paymentMethod === 'cash' ? 1 : Math.max(1, Number(exp.installments) || 1);
+          return {
+            entryId: exp.id, expenseId: exp.id, title: exp.title, note: exp.note, originalDate: exp.date,
+            billingMonthKey: calc.firstMonthKey, totalAmount: Number(exp.amount), installmentAmount: Number(exp.amount) / count,
+            installmentIndex: 1, installmentCount: count, category: exp.category, paymentMethod: exp.paymentMethod
+          };
+        }).sort((a, b) => b.originalDate.localeCompare(a.originalDate));
+
+        if (periodScope === 'month') {
+          sourceList = transList.filter(exp => exp.originalDate.slice(0, 7) === selectedMonth);
+        } else if (periodScope === 'year') {
+          sourceList = transList.filter(exp => exp.originalDate.startsWith(selectedYear));
+        } else {
+          sourceList = transList;
+        }
+      }
+
+      // 2. Kategori Dağılımı (Seçili Kapsam Doğrultusunda)
+      const donutContainer = document.getElementById('donutChartContainer');
+      const scopeTotal = sourceList.reduce((acc, item) => acc + (viewMode === 'billing' ? item.installmentAmount : item.totalAmount), 0);
+      const breakdown = getCategoryBreakdown(sourceList, scopeTotal);
+      if (donutContainer) {
+        if (breakdown.length === 0) {
+          donutContainer.innerHTML = `<div class="py-6 text-center text-xs text-slate-400">Bu dönem/kapsam için harcama verisi bulunamadı.</div>`;
+        } else {
+          donutContainer.innerHTML = `<div class="space-y-2.5">${breakdown.map(cat => `
+            <div class="space-y-1">
+              <div class="flex items-center justify-between text-xs">
+                <div class="flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full" style="background-color: ${cat.color}"></span>
+                  <span class="font-semibold text-slate-700">${cat.name}</span>
+                </div>
+                <span class="font-bold text-slate-900">${formatCurrency(cat.amount)} <span class="text-slate-400 font-normal">(%${cat.percentage.toFixed(0)})</span></span>
+              </div>
+              <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                <div class="h-full rounded-full" style="width: ${cat.percentage}%; background-color: ${cat.color}"></div>
+              </div>
+            </div>
+          `).join('')}</div>`;
+        }
+      }
+
+      // 3. İstatistik Sayfası Filtre ve Detaylı İnceleme
+      const searchQ = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
+      const filterCat = document.getElementById('filterCategorySelect')?.value || 'all';
+      const filterMeth = document.getElementById('filterMethodSelect')?.value || 'all';
+
+      const hasActiveFilter = searchQ !== '' || filterCat !== 'all' || filterMeth !== 'all' || periodScope !== 'month';
+      const resetBtn = document.getElementById('resetFiltersBtn');
+      if (resetBtn) resetBtn.classList.toggle('hidden', !hasActiveFilter);
+
+      const filtered = sourceList.filter(item => {
+        return (filterCat === 'all' || item.category === filterCat) &&
+               (filterMeth === 'all' || item.paymentMethod === filterMeth) &&
+               (!searchQ || item.title.toLowerCase().includes(searchQ));
+      });
+
+      const filteredSum = filtered.reduce((acc, item) => acc + (viewMode === 'billing' ? item.installmentAmount : item.totalAmount), 0);
+      const countBadge = document.getElementById('filteredCountBadge');
+      const totalEl = document.getElementById('filteredTotalAmount');
+      if (countBadge) countBadge.textContent = `${filtered.length} kayıt`;
+      if (totalEl) totalEl.textContent = formatCurrency(filteredSum);
+
+      const filteredListEl = document.getElementById('analyticsFilteredList');
+      if (filteredListEl) {
+        if (filtered.length === 0) {
+          filteredListEl.innerHTML = `<div class="py-6 text-center text-xs text-slate-400">Filtreye uygun harcama bulunamadı.</div>`;
+        } else {
+          filteredListEl.innerHTML = filtered.map(item => createExpenseRowHTML(item, viewMode)).join('');
+        }
+      }
+    }
+
+    function renderCardsTab(allEntries, currentMonthEntries) {
+      const cardsGrid = document.getElementById('cardsGridContainer');
+      if (!cardsGrid) return;
+      const nextMonthKey = addMonthsToKey(selectedMonth, 1);
+      if (cards.length === 0) {
+        cardsGrid.innerHTML = `<div class="col-span-full bg-white rounded-2xl border border-slate-200/80 p-8 text-center text-xs text-slate-400">Henüz kredi kartı eklenmemiş.</div>`;
+        return;
+      }
+      cardsGrid.innerHTML = cards.map(card => {
+        const grad = CARD_GRADIENTS.find(g => g.id === card.colorId) || CARD_GRADIENTS[0];
+        const thisMonthBill = currentMonthEntries.filter(e => e.paymentMethod === card.id).reduce((a, c) => a + c.installmentAmount, 0);
+        const nextMonthBill = allEntries.filter(e => e.paymentMethod === card.id && e.billingMonthKey === nextMonthKey).reduce((a, c) => a + c.installmentAmount, 0);
+
+        return `
+          <div class="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-sm flex flex-col justify-between">
+            <div class="p-4 bg-gradient-to-br ${grad.classes} text-white">
+              <div class="flex items-start justify-between">
+                <div>
+                  <p class="text-[10px] uppercase tracking-wider text-white/75">${card.bank}</p>
+                  <h3 class="text-sm font-extrabold">${card.name}</h3>
+                </div>
+                <i data-lucide="credit-card" class="w-4 h-4 text-white/80"></i>
+              </div>
+              <div class="mt-3 flex items-center justify-between text-[11px]">
+                <div>Kesim: <strong>Ayın ${card.cutoffDay}'i</strong></div>
+                <div>Limit: ${formatCurrency(card.limit)}</div>
+              </div>
+            </div>
+            <div class="p-3 space-y-2 text-xs">
+              <div class="grid grid-cols-2 gap-2">
+                <div class="p-2 rounded-xl bg-slate-50"><span class="text-[10px] text-slate-500 block">Bu Ay Ekstre</span><strong>${formatCurrency(thisMonthBill)}</strong></div>
+                <div class="p-2 rounded-xl bg-indigo-50 text-indigo-600"><span class="text-[10px] block">Gelecek Ay</span><strong>${formatCurrency(nextMonthBill)}</strong></div>
+              </div>
+              <div class="flex items-center justify-end gap-3 pt-1 border-t border-slate-100">
+                <button onclick="openEditCardModal('${card.id}')" class="text-indigo-600 font-semibold"><i data-lucide="edit-3" class="w-3.5 h-3.5 inline"></i> Düzenle</button>
+                <button onclick="openDeleteModal('card', '${card.id}')" class="text-rose-600 font-semibold"><i data-lucide="trash-2" class="w-3.5 h-3.5 inline"></i> Sil</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function openNewExpenseModal() {
+      editingExpenseId = null;
+      populateSelectDropdowns();
+      document.getElementById('expenseModalTitle').textContent = 'Yeni Harcama Ekle';
+      document.getElementById('expTitle').value = '';
+      document.getElementById('expAmount').value = '';
+      const todayDay = String(new Date().getDate()).padStart(2, '0');
+      document.getElementById('expDate').value = `${selectedMonth}-${todayDay}`;
+      document.getElementById('expMethod').value = 'cash';
+      document.getElementById('expInstallments').value = '1';
+      document.getElementById('expNote').value = '';
+      handleMethodSelectChange();
+      const modal = document.getElementById('expenseModal');
+      modal.classList.remove('hidden'); modal.classList.add('flex');
+    }
+
+    function openEditExpenseModal(id) {
+      const exp = expenses.find(e => e.id === id);
+      if (!exp) return;
+      editingExpenseId = exp.id;
+      populateSelectDropdowns();
+      document.getElementById('expenseModalTitle').textContent = 'Harcamayı Düzenle';
+      document.getElementById('expTitle').value = exp.title;
+      document.getElementById('expAmount').value = exp.amount;
+      document.getElementById('expDate').value = exp.date;
+      document.getElementById('expCategory').value = exp.category;
+      document.getElementById('expMethod').value = exp.paymentMethod;
+      document.getElementById('expInstallments').value = exp.installments || 1;
+      document.getElementById('expNote').value = exp.note || '';
+      handleMethodSelectChange();
+      const modal = document.getElementById('expenseModal');
+      modal.classList.remove('hidden'); modal.classList.add('flex');
+    }
+
+    function closeExpenseModal() {
+      document.getElementById('expenseModal').classList.add('hidden');
+      document.getElementById('expenseModal').classList.remove('flex');
+    }
+
+    function handleMethodSelectChange() {
+      const method = document.getElementById('expMethod').value;
+      const inst = document.getElementById('expInstallments');
+      inst.disabled = (method === 'cash');
+      if (method === 'cash') inst.value = '1';
+      updateLiveBillingPreview();
+    }
+
+    function updateLiveBillingPreview() {
+      const dateVal = document.getElementById('expDate').value;
+      const methodVal = document.getElementById('expMethod').value;
+      const amountVal = Number(document.getElementById('expAmount').value) || 0;
+      const instCount = methodVal === 'cash' ? 1 : Math.max(1, Number(document.getElementById('expInstallments').value) || 1);
+      const box = document.getElementById('liveBillingPreviewBox');
+      if (!dateVal || !box) return;
+
+      const calc = calculateInitialBillingMonth(dateVal, methodVal);
+      const monthlyPay = amountVal / instCount;
+      const lastMonthKey = addMonthsToKey(calc.firstMonthKey, instCount - 1);
+
+      box.className = `p-3 rounded-xl border text-xs space-y-1 ${calc.isShiftedNextMonth ? 'bg-amber-50 border-amber-200 text-amber-800' : 'bg-indigo-50 border-indigo-200 text-indigo-800'}`;
+      box.innerHTML = `<div><strong>İlk Yansıyacağı Dönem:</strong> ${formatMonthKey(calc.firstMonthKey)}</div><p>${calc.reason}</p>${instCount > 1 && amountVal > 0 ? `<div>Aylık: <strong>${formatCurrency(monthlyPay)}</strong> (${formatMonthKey(calc.firstMonthKey)} - ${formatMonthKey(lastMonthKey)})</div>` : ''}`;
+    }
+
+    async function handleSaveExpense(e) {
+      e.preventDefault();
+      const payload = {
+        id: editingExpenseId || ('exp_' + Date.now()),
+        title: document.getElementById('expTitle').value.trim(),
+        amount: Number(document.getElementById('expAmount').value),
+        date: document.getElementById('expDate').value,
+        category: document.getElementById('expCategory').value,
+        paymentMethod: document.getElementById('expMethod').value,
+        installments: document.getElementById('expMethod').value === 'cash' ? 1 : Number(document.getElementById('expInstallments').value) || 1,
+        note: document.getElementById('expNote').value.trim()
+      };
+      if (editingExpenseId) expenses = expenses.map(item => item.id === editingExpenseId ? payload : item);
+      else expenses.unshift(payload);
+
+      closeExpenseModal();
+      renderAll();
+      await saveToCloud();
+    }
+
+    function openNewCardModal() {
+      editingCardId = null;
+      selectedCardColor = 'indigo';
+      document.getElementById('cardModalTitle').textContent = 'Yeni Kredi Kartı Ekle';
+      document.getElementById('cardName').value = '';
+      document.getElementById('cardBank').value = '';
+      document.getElementById('cardCutoff').value = 1;
+      document.getElementById('cardLimit').value = 50000;
+      renderCardColorPicker();
+      const modal = document.getElementById('cardModal');
+      modal.classList.remove('hidden'); modal.classList.add('flex');
+    }
+
+    function openEditCardModal(id) {
+      const card = getCardInfo(id);
+      if (!card) return;
+      editingCardId = card.id;
+      selectedCardColor = card.colorId || 'indigo';
+      document.getElementById('cardModalTitle').textContent = 'Kartı Düzenle';
+      document.getElementById('cardName').value = card.name;
+      document.getElementById('cardBank').value = card.bank;
+      document.getElementById('cardCutoff').value = card.cutoffDay;
+      document.getElementById('cardLimit').value = card.limit || 50000;
+      renderCardColorPicker();
+      const modal = document.getElementById('cardModal');
+      modal.classList.remove('hidden'); modal.classList.add('flex');
+    }
+
+    function closeCardModal() {
+      document.getElementById('cardModal').classList.add('hidden');
+      document.getElementById('cardModal').classList.remove('flex');
+    }
+
+    function renderCardColorPicker() {
+      document.getElementById('cardColorsContainer').innerHTML = CARD_GRADIENTS.map(g => `
+        <button type="button" onclick="selectedCardColor='${g.id}'; renderCardColorPicker();" class="h-8 rounded-lg bg-gradient-to-br ${g.classes} border-2 ${selectedCardColor === g.id ? 'border-white ring-2 ring-indigo-600 scale-105' : 'border-transparent opacity-70'}"></button>
+      `).join('');
+    }
+
+    async function handleSaveCard(e) {
+      e.preventDefault();
+      const payload = {
+        id: editingCardId || ('card_' + Date.now()),
+        name: document.getElementById('cardName').value.trim(),
+        bank: document.getElementById('cardBank').value.trim() || 'Banka',
+        cutoffDay: Math.min(31, Math.max(1, Number(document.getElementById('cardCutoff').value) || 1)),
+        colorId: selectedCardColor,
+        limit: Number(document.getElementById('cardLimit').value) || 50000
+      };
+      if (editingCardId) cards = cards.map(c => c.id === editingCardId ? payload : c);
+      else cards.push(payload);
+
+      closeCardModal();
+      populateSelectDropdowns();
+      renderAll();
+      await saveToCloud();
+    }
+
+    function openDeleteModal(type, id) {
+      deleteTarget = { type, id };
+      const title = type === 'expense' ? expenses.find(e => e.id === id)?.title : cards.find(c => c.id === id)?.name;
+      document.getElementById('deleteModalText').innerHTML = `<strong>"${title}"</strong> silinecek. Emin misiniz?`;
+      const modal = document.getElementById('deleteModal');
+      modal.classList.remove('hidden'); modal.classList.add('flex');
+    }
+
+    function closeDeleteModal() {
+      deleteTarget = null;
+      document.getElementById('deleteModal').classList.add('hidden');
+      document.getElementById('deleteModal').classList.remove('flex');
+    }
+
+    async function confirmDeleteAction() {
+      if (!deleteTarget) return;
+      const target = { ...deleteTarget };
+      closeDeleteModal();
+      if (target.type === 'expense') {
+        expenses = expenses.filter(e => e.id !== target.id);
+      } else {
+        cards = cards.filter(c => c.id !== target.id);
+        expenses.forEach(e => { if (e.paymentMethod === target.id) e.paymentMethod = 'cash'; });
+      }
+      populateSelectDropdowns();
+      renderAll();
+      await saveToCloud();
+    }
+
+    // Başlangıç Çalıştırma
+    populateSelectDropdowns();
+    switchTab('dashboard');
+    fetchFromCloud();
+  </script>
+</body>
+</html>

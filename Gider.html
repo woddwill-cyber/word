@@ -28,7 +28,7 @@
 <body class="min-h-screen bg-slate-50 text-slate-900 pb-28">
 
   <!-- ÜST KONTROL PANELİ (SADE & MOBİL UYUMLU) -->
-  <header class="sticky top-0 z-30 bg-white/95 backdrop-blur-lg border-b border-slate-200/80">
+  <header id="appHeader" class="sticky top-0 z-30 bg-white/95 backdrop-blur-lg border-b border-slate-200/80">
     <div class="max-w-2xl mx-auto px-4 py-2.5 flex items-center justify-center">
       <!-- Hesap Dönemi Seçici -->
       <div class="flex items-center justify-between w-full sm:w-auto gap-2 bg-slate-100/90 p-1 rounded-2xl border border-slate-200/70">
@@ -169,17 +169,26 @@
       <div id="cardsGridContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
     </div>
 
+    <!-- SEKME 4: YATIRIM -->
+    <div id="tabContent-invest" class="hidden space-y-3.5">
+      <div id="invContent" class="space-y-3.5"></div>
+    </div>
   </main>
 
   <!-- SAĞ ALT KOMPAKT GİDER EKLEME BUTONU (FAB) -->
-  <button onclick="openNewExpenseModal()" aria-label="Harcama Ekle" class="fixed bottom-20 right-4 z-40 flex items-center gap-1.5 px-3.5 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white shadow-lg shadow-indigo-600/30 transition">
+  <button id="fabExpense" onclick="openNewExpenseModal()" aria-label="Harcama Ekle" class="fixed bottom-20 right-4 z-40 flex items-center gap-1.5 px-3.5 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white shadow-lg shadow-indigo-600/30 transition">
     <i data-lucide="plus" class="w-5 h-5 stroke-[2.5]"></i>
     <span class="text-xs font-bold pr-0.5">Gider Ekle</span>
   </button>
 
+    <button id="fabInvest" onclick="openInvModal()" aria-label="Yatırım Ekle" class="hidden fixed bottom-20 right-4 z-40 items-center gap-1.5 px-3.5 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white shadow-lg shadow-indigo-600/30 transition">
+    <i data-lucide="plus" class="w-5 h-5 stroke-[2.5]"></i>
+    <span class="text-xs font-bold pr-0.5">Yatırım Ekle</span>
+  </button>
+
   <!-- ALT GEZİNME ÇUBUĞU -->
   <nav class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-slate-200/80">
-    <div class="max-w-md mx-auto px-3 py-1.5 grid grid-cols-3 gap-2">
+    <div class="max-w-md mx-auto px-3 py-1.5 grid grid-cols-4 gap-2">
       <button id="tabBtn-dashboard" onclick="switchTab('dashboard')" class="flex flex-col items-center justify-center gap-0.5 py-1.5 px-3 rounded-xl transition">
         <i data-lucide="layers" class="w-4 h-4"></i>
         <span class="text-[10px] font-bold">Harcamalar</span>
@@ -191,6 +200,10 @@
       <button id="tabBtn-cards" onclick="switchTab('cards')" class="flex flex-col items-center justify-center gap-0.5 py-1.5 px-3 rounded-xl transition">
         <i data-lucide="credit-card" class="w-4 h-4"></i>
         <span id="cardsTabCount" class="text-[10px] font-bold">Kartlarım</span>
+      </button>
+      <button id="tabBtn-invest" onclick="switchTab('invest')" class="flex flex-col items-center justify-center gap-0.5 py-1.5 px-3 rounded-xl transition">
+        <i data-lucide="trending-up" class="w-4 h-4"></i>
+        <span class="text-[10px] font-bold">Yatırım</span>
       </button>
     </div>
   </nav>
@@ -290,6 +303,41 @@
     </div>
   </div>
 
+  
+  <!-- MODAL: YATIRIM EKLE / DÜZENLE -->
+  <div id="invModal" class="fixed inset-0 z-50 hidden items-center justify-center p-3.5 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white w-full max-w-md rounded-2xl border border-slate-200 shadow-2xl overflow-hidden">
+      <div class="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
+        <h3 id="invModalTitle" class="text-sm font-bold text-slate-900">Yatırım Kaydı</h3>
+        <button onclick="closeM('invModal')" class="text-slate-400 hover:text-slate-600 text-sm font-bold px-2 py-1 rounded-lg">✕</button>
+      </div>
+      <form onsubmit="handleSaveInv(event)" class="p-5 space-y-3.5 max-h-[82vh] overflow-y-auto">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">İşlem</label>
+            <select id="invType" onchange="invTypeChange()" class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="buy">Para Ekleme (Fon Alımı)</option>
+              <option value="sell">Para Çıkışı</option>
+              <option value="price">Sadece Fiyat Güncelle</option>
+            </select></div>
+          <div><label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Tarih *</label><input id="invDate" type="date" required class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" /></div>
+        </div>
+        <div id="invAmountWrap"><label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Tutar (TL) *</label><input id="invAmount" type="number" step="any" min="0" class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold" /></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Fon Fiyatı (GPY1) <span id="invPriceReq">*</span></label><input id="invPrice" type="number" step="any" min="0" class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" /></div>
+          <div><label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Gram Altın (TL)</label><input id="invGold" type="number" step="any" min="0" class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" /></div>
+          <div><label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Dolar (TL)</label><input id="invUsd" type="number" step="any" min="0" class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" /></div>
+          <div><label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Yen (TL)</label><input id="invJpy" type="number" step="any" min="0" class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" /></div>
+        </div>
+        <div><label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Toplam Para (opsiyonel)</label><input id="invTotal" type="number" step="any" min="0" class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          <p class="text-[10px] text-slate-400 mt-1">Excel'deki "TOTAL PARA" sütunu. Girersen güncel değer olarak bunu kullanırım; boşsa adet × fon fiyatından hesaplarım.</p></div>
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+          <button type="button" onclick="closeM('invModal')" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-600">İptal</button>
+          <button type="submit" class="px-5 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-md">Kaydet</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- MODAL: SİLME ONAYI -->
   <div id="deleteModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
     <div class="bg-white w-full max-w-xs rounded-2xl border border-slate-200 p-5 shadow-2xl space-y-3.5">
@@ -345,6 +393,8 @@
     let editingCardId = null;
     let selectedCardColor = 'indigo';
     let deleteTarget = null;
+    let investments = [];
+    let editingInvId = null;
 
     async function fetchFromCloud() {
       const localData = localStorage.getItem('gider_yedek_veri');
@@ -353,6 +403,7 @@
           const parsed = JSON.parse(localData);
           if (Array.isArray(parsed.cards)) cards = parsed.cards;
           if (Array.isArray(parsed.expenses)) expenses = parsed.expenses;
+          if (Array.isArray(parsed.investments)) investments = parsed.investments;
           populateSelectDropdowns();
           renderAll();
         } catch (e) {}
@@ -370,7 +421,8 @@
           if (data && Array.isArray(data.cards) && Array.isArray(data.expenses)) {
             cards = data.cards;
             expenses = data.expenses;
-            localStorage.setItem('gider_yedek_veri', JSON.stringify({ cards, expenses }));
+            if (Array.isArray(data.investments)) investments = data.investments;
+            localStorage.setItem('gider_yedek_veri', JSON.stringify({ cards, expenses, investments }));
             populateSelectDropdowns();
             renderAll();
           }
@@ -381,7 +433,7 @@
     }
 
     async function saveToCloud() {
-      localStorage.setItem('gider_yedek_veri', JSON.stringify({ cards, expenses }));
+      localStorage.setItem('gider_yedek_veri', JSON.stringify({ cards, expenses, investments }));
       if (!CLOUDFLARE_WORKER_URL || CLOUDFLARE_WORKER_URL.includes("KULLANICI_ADINIZ")) return;
 
       try {
@@ -391,7 +443,7 @@
             'Content-Type': 'application/json',
             'X-Custom-Auth': CLOUDFLARE_SECRET
           },
-          body: JSON.stringify({ cards, expenses })
+          body: JSON.stringify({ cards, expenses, investments })
         });
       } catch (err) {
         console.error("Buluta kayıt hatası:", err);
@@ -483,7 +535,7 @@
 
     function switchTab(tab) {
       activeTab = tab;
-      ['dashboard', 'analytics', 'cards'].forEach(t => {
+      ['dashboard', 'analytics', 'cards', 'invest'].forEach(t => {
         const btn = document.getElementById(`tabBtn-${t}`);
         const content = document.getElementById(`tabContent-${t}`);
         if (btn && content) {
@@ -575,11 +627,15 @@
     }
 
     function renderAll() {
+      const isInv = activeTab === 'invest';
+      ['appHeader', 'summaryCardsContainer', 'fabExpense'].forEach(id => document.getElementById(id)?.classList.toggle('hidden', isInv));
+      const fi = document.getElementById('fabInvest');
+      if (fi) { fi.classList.toggle('hidden', !isInv); fi.classList.toggle('flex', isInv); }
       const headerMonthEl = document.getElementById('headerSelectedMonth');
       if (headerMonthEl) headerMonthEl.innerHTML = `<i data-lucide="calendar" class="w-3.5 h-3.5 text-indigo-500 shrink-0"></i><span>${formatMonthKey(selectedMonth)}</span>`;
 
       const cardsCountEl = document.getElementById('cardsTabCount');
-      if (cardsCountEl) cardsCountEl.textContent = `Kartlarım (${cards.length})`;
+      if (cardsCountEl) cardsCountEl.textContent = `Kartlarım`;
 
       const allEntries = getAllBillingEntries();
       const currentMonthEntries = allEntries.filter(e => e.billingMonthKey === selectedMonth);
@@ -605,6 +661,7 @@
       renderDashboard(currentMonthEntries);
       renderAnalytics(allEntries, currentMonthEntries, totalBilling);
       renderCardsTab(allEntries, currentMonthEntries);
+      if (isInv) renderInvest();
       lucide.createIcons();
     }
 
@@ -982,7 +1039,7 @@
 
     function openDeleteModal(type, id) {
       deleteTarget = { type, id };
-      const title = type === 'expense' ? expenses.find(e => e.id === id)?.title : cards.find(c => c.id === id)?.name;
+      const title = type === 'expense' ? expenses.find(e => e.id === id)?.title : type === 'invest' ? ('Yatırım kaydı (' + formatDateTR(investments.find(i => i.id === id)?.date) + ')') : cards.find(c => c.id === id)?.name;
       document.getElementById('deleteModalText').innerHTML = `<strong>"${title}"</strong> silinecek. Emin misiniz?`;
       const modal = document.getElementById('deleteModal');
       modal.classList.remove('hidden'); modal.classList.add('flex');
@@ -998,7 +1055,9 @@
       if (!deleteTarget) return;
       const target = { ...deleteTarget };
       closeDeleteModal();
-      if (target.type === 'expense') {
+      if (target.type === 'invest') {
+        investments = investments.filter(i => i.id !== target.id);
+      } else if (target.type === 'expense') {
         expenses = expenses.filter(e => e.id !== target.id);
       } else {
         cards = cards.filter(c => c.id !== target.id);
@@ -1007,6 +1066,231 @@
       populateSelectDropdowns();
       renderAll();
       await saveToCloud();
+    }
+
+    // ===================== YATIRIM BÖLÜMÜ =====================
+    const INV_TYPES = { buy: 'Para Ekleme', sell: 'Para Çıkışı', price: 'Fiyat Güncelleme' };
+    const pct = x => (x >= 0 ? '+' : '−') + '%' + Math.abs(x * 100).toFixed(1).replace('.', ',');
+    const pcls = x => x >= 0 ? 'text-emerald-600' : 'text-rose-600';
+    const sTL = x => (x >= 0 ? '+' : '−') + formatCurrency(Math.abs(x));
+    const fN = (n, d = 6) => Number(n).toLocaleString('tr-TR', { maximumFractionDigits: d });
+    const shortD = t => new Date(t).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' });
+    const openM = id => { const m = document.getElementById(id); m.classList.remove('hidden'); m.classList.add('flex'); };
+    const closeM = id => { const m = document.getElementById(id); m.classList.add('hidden'); m.classList.remove('flex'); };
+
+    function invCalc() {
+      const recs = [...investments].sort((a, b) => a.date.localeCompare(b.date));
+      const S = { recs, units: 0, invested: 0, withdrawn: 0, usdIn: 0, usdOut: 0, goldIn: 0, goldOut: 0, price: 0, usd: 0, gold: 0, jpy: 0, lots: [], tl: [] };
+      recs.forEach(r => {
+        const amt = Number(r.amount) || 0;
+        if (r.fundPrice > 0) S.price = r.fundPrice;
+        if (r.usd > 0) S.usd = r.usd;
+        if (r.gold > 0) S.gold = r.gold;
+        if (r.jpy > 0) S.jpy = r.jpy;
+        if (r.type === 'buy' && amt > 0 && S.price > 0) {
+          const u = amt / S.price;
+          S.units += u; S.invested += amt;
+          if (S.usd) S.usdIn += amt / S.usd;
+          if (S.gold) S.goldIn += amt / S.gold;
+          S.lots.push({ date: r.date, amt, price: S.price, units: u });
+        } else if (r.type === 'sell' && amt > 0) {
+          S.units = Math.max(0, S.units - (S.price ? amt / S.price : 0));
+          S.withdrawn += amt;
+          if (S.usd) S.usdOut += amt / S.usd;
+          if (S.gold) S.goldOut += amt / S.gold;
+        }
+        const tot = Number(r.total) || 0;
+        const value = tot > 0 ? tot : S.units * S.price;
+        if (tot > 0 && S.units > 0 && !(r.fundPrice > 0)) S.price = tot / S.units;
+        S.tl.push({ t: new Date(r.date + 'T00:00:00').getTime(), value, net: S.invested - S.withdrawn,
+          price: r.fundPrice > 0 ? r.fundPrice : null, usd: r.usd > 0 ? r.usd : null, gold: r.gold > 0 ? r.gold : null });
+      });
+      const last = S.tl[S.tl.length - 1];
+      S.value = last ? last.value : 0;
+      S.net = S.invested - S.withdrawn;
+      S.profit = S.value - S.net;
+      S.ret = S.invested ? S.profit / S.invested : 0;
+      S.usdVal = (S.usdIn - S.usdOut) * S.usd;
+      S.goldVal = (S.goldIn - S.goldOut) * S.gold;
+      S.retUsd = S.usdIn && S.usd ? (S.value / S.usd - (S.usdIn - S.usdOut)) / S.usdIn : null;
+      S.retGold = S.goldIn && S.gold ? (S.value / S.gold - (S.goldIn - S.goldOut)) / S.goldIn : null;
+      const lastT = last ? last.t : 0;
+      let w = 0, wd = 0;
+      S.lots.forEach(l => { w += l.amt; wd += l.amt * (lastT - new Date(l.date + 'T00:00:00').getTime()) / 864e5; });
+      S.avgDays = w ? wd / w : 0;
+      S.ann = (S.avgDays >= 30 && S.ret > -1) ? Math.pow(1 + S.ret, 365 / S.avgDays) - 1 : null;
+      return S;
+    }
+
+    function lineSvg(series, fmt) {
+      const all = series.flatMap(s => s.data);
+      if (all.length < 2 || series.every(s => s.data.length < 2)) return '<p class="py-6 text-center text-xs text-slate-400">Grafik için en az 2 kayıt gerekli.</p>';
+      const W = 340, H = 170, L = 44, R = 8, T = 8, B = 20;
+      const t0 = Math.min(...all.map(p => p.t)), t1 = Math.max(...all.map(p => p.t));
+      let lo = Math.min(...all.map(p => p.v)), hi = Math.max(...all.map(p => p.v));
+      const pad = (hi - lo || hi || 1) * 0.1; lo -= pad; hi += pad;
+      const X = t => L + (t1 === t0 ? 0 : (t - t0) / (t1 - t0)) * (W - L - R);
+      const Y = v => T + (1 - (v - lo) / (hi - lo)) * (H - T - B);
+      let g = '';
+      for (let i = 0; i <= 3; i++) {
+        const v = lo + (hi - lo) * i / 3, y = Y(v).toFixed(1);
+        g += `<line x1="${L}" x2="${W - R}" y1="${y}" y2="${y}" stroke="#e2e8f0"/><text x="${L - 4}" y="${+y + 3}" text-anchor="end" font-size="8" fill="#94a3b8">${fmt(v)}</text>`;
+      }
+      g += `<text x="${L}" y="${H - 5}" font-size="8" fill="#94a3b8">${shortD(t0)}</text><text x="${W - R}" y="${H - 5}" text-anchor="end" font-size="8" fill="#94a3b8">${shortD(t1)}</text>`;
+      series.forEach(s => {
+        if (!s.data.length) return;
+        const d = s.data.map((p, i) => `${i ? 'L' : 'M'}${X(p.t).toFixed(1)} ${Y(p.v).toFixed(1)}`).join(' ');
+        g += `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" ${s.dash ? 'stroke-dasharray="4 3"' : ''}/>` +
+          s.data.map(p => `<circle cx="${X(p.t).toFixed(1)}" cy="${Y(p.v).toFixed(1)}" r="2.5" fill="${s.color}"/>`).join('');
+      });
+      const legend = series.filter(s => s.data.length).map(s => `<span class="flex items-center gap-1"><span class="w-3 h-1 rounded inline-block" style="background:${s.color}"></span>${s.name}</span>`).join('');
+      return `<svg viewBox="0 0 ${W} ${H}" class="w-full">${g}</svg><div class="flex flex-wrap gap-3 mt-1 text-[10px] text-slate-600">${legend}</div>`;
+    }
+
+    function invCard(title, icon, body) {
+      return `<div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm space-y-2.5"><h3 class="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-1.5"><i data-lucide="${icon}" class="w-4 h-4 text-indigo-500"></i>${title}</h3>${body}</div>`;
+    }
+
+    function renderInvest() {
+      const el = document.getElementById('invContent');
+      if (!el) return;
+      const S = invCalc();
+      if (!S.recs.length) {
+        el.innerHTML = `<div class="bg-white rounded-2xl border border-slate-200/80 p-8 text-center space-y-2"><i data-lucide="trending-up" class="w-7 h-7 text-slate-300 mx-auto"></i><p class="text-xs text-slate-400">Henüz yatırım kaydı yok. "Yatırım Ekle" ile başla.</p></div>`;
+        return;
+      }
+      const sc = (l, v, c, sub) => `<div class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm"><span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">${l}</span><div class="mt-1 text-base font-extrabold truncate ${c || 'text-slate-900'}">${v}</div>${sub ? `<div class="text-[10px] text-slate-400 truncate">${sub}</div>` : ''}</div>`;
+      const cards = `<div class="grid grid-cols-2 gap-2.5">
+        ${sc('Güncel Değer', formatCurrency(S.value))}
+        ${sc('Toplam Kâr / Zarar', sTL(S.profit), pcls(S.profit), pct(S.ret))}
+        ${sc('Yatırılan', formatCurrency(S.invested), '', S.withdrawn ? `Çekilen: ${formatCurrency(S.withdrawn)}` : `${S.lots.length} alım`)}
+        ${sc('Getiri', pct(S.ret), pcls(S.ret), S.ann !== null ? `Yıllık ≈ ${pct(S.ann)}` : '')}
+      </div>`;
+      const rate = (l, v) => `<div class="p-2 rounded-xl bg-slate-50 text-center"><span class="text-[9px] uppercase text-slate-400 block">${l}</span><strong class="text-[11px]">${v}</strong></div>`;
+      const rates = `<div class="grid grid-cols-4 gap-2">${rate('GPY1', fN(S.price))}${rate('Dolar', S.usd ? fN(S.usd, 4) : '—')}${rate('Altın', S.gold ? fN(S.gold, 2) : '—')}${rate('Yen', S.jpy ? fN(S.jpy, 2) : '—')}</div>`;
+
+      // Anlatım
+      const chg = k => { const a = S.tl.filter(p => p[k]); return a.length > 1 ? a[a.length - 1][k] / a[0][k] - 1 : null; };
+      const b = t => `<strong>${t}</strong>`;
+      const li = t => `<li class="flex gap-2"><span class="text-indigo-500">•</span><span>${t}</span></li>`;
+      const L = [];
+      L.push(`Toplam ${b(formatCurrency(S.invested))} yatırdınız${S.withdrawn ? `, ${b(formatCurrency(S.withdrawn))} çektiniz` : ''}. Fonun güncel değeri ${b(formatCurrency(S.value))}; net ${S.profit >= 0 ? 'kâr' : 'zarar'} ${b(sTL(S.profit))} (${b(pct(S.ret))}).`);
+      if (S.ann !== null) L.push(`Paranızın ortalama ${b(Math.round(S.avgDays) + ' gün')} fonda kaldığı düşünülürse yaklaşık yıllık getiri ${b(pct(S.ann))} (kaba tahmin; süre kısaysa yanıltıcı olabilir).`);
+      if (S.usdIn && S.usd) { const d = S.value - S.usdVal; L.push(`Aynı para akışı dolarda olsaydı bugün ${b(formatCurrency(S.usdVal))} ederdi; fon dolara göre ${b(d >= 0 ? 'önde' : 'geride')} (${sTL(d)}). Dolar bazında getiri ${b(pct(S.retUsd))}${S.retUsd < 0 ? ' — TL kazancın bir kısmı kur artışıyla erimiş' : ''}.`); }
+      if (S.goldIn && S.gold) { const d = S.value - S.goldVal; L.push(`Altında tutsaydınız ${b(formatCurrency(S.goldVal))} olurdu; fon altına göre ${b(d >= 0 ? 'önde' : 'geride')} (${sTL(d)}). Gram altın bazında getiri ${b(pct(S.retGold))}.`); }
+      const cp = chg('price'), cu = chg('usd'), cg = chg('gold');
+      if (cp !== null) L.push(`İlk kayıttan bu yana fon fiyatı ${b(pct(cp))}${cu !== null ? `, dolar ${b(pct(cu))}` : ''}${cg !== null ? `, gram altın ${b(pct(cg))}` : ''} değişti.`);
+      const lots = S.lots.map(l => ({ ...l, p: S.price / l.price - 1, pl: l.units * (S.price - l.price) }));
+      if (lots.length > 1) { const best = [...lots].sort((a, c) => c.p - a.p)[0], worst = [...lots].sort((a, c) => a.p - c.p)[0]; L.push(`En kârlı alım ${b(formatDateTR(best.date))} (${pct(best.p)}), en zayıf alım ${b(formatDateTR(worst.date))} (${pct(worst.p)}).`); }
+      const story = invCard('Kapsamlı Özet', 'file-text', `<ul class="space-y-1.5 text-xs text-slate-700 leading-relaxed">${L.map(li).join('')}</ul>`);
+
+      // Grafikler
+      const idx = (k, name, color) => { const a = S.tl.filter(p => p[k]); const base = a[0] ? a[0][k] : 1; return { name, color, data: a.map(p => ({ t: p.t, v: p[k] / base * 100 })) }; };
+      const k = v => (v / 1000).toFixed(0) + ' B';
+      const ch1 = invCard('Portföy Değeri ve Anapara', 'line-chart', lineSvg([
+        { name: 'Portföy değeri', color: '#4f46e5', data: S.tl.map(p => ({ t: p.t, v: p.value })) },
+        { name: 'Net anapara', color: '#94a3b8', dash: true, data: S.tl.map(p => ({ t: p.t, v: p.net })) }], k));
+      const ch2 = invCard('Fon, Dolar ve Altın (Başlangıç = 100)', 'activity', lineSvg([idx('price', 'GPY1 fon', '#4f46e5'), idx('usd', 'Dolar', '#10b981'), idx('gold', 'Gram altın', '#f59e0b')], v => v.toFixed(0)));
+      const alts = [{ n: 'Fon (gerçek)', v: S.value, c: '#4f46e5' }, { n: 'Dolar tutsaydın', v: S.usdVal, c: '#10b981' }, { n: 'Altın tutsaydın', v: S.goldVal, c: '#f59e0b' }, { n: 'Net anapara', v: S.net, c: '#94a3b8' }];
+      const mx = Math.max(...alts.map(a => a.v), 1);
+      const ch3 = invCard('Aynı Parayla Alternatifler', 'scale', `<div class="space-y-2">${alts.map(a => `<div><div class="flex justify-between text-[11px]"><span class="font-semibold text-slate-700">${a.n}</span><span class="font-bold text-slate-900">${formatCurrency(a.v)}${a.n !== 'Net anapara' && S.net ? ` <span class="${pcls(a.v - S.net)} font-semibold">(${pct((a.v - S.net) / S.net)})</span>` : ''}</span></div><div class="h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full rounded-full" style="width:${Math.max(0, a.v / mx * 100)}%;background:${a.c}"></div></div></div>`).join('')}</div>`);
+      const mp = Math.max(...lots.map(l => Math.abs(l.p)), 0.0001);
+      const ch4 = lots.length ? invCard('Alım Bazında Kâr', 'bar-chart-3', `<div class="space-y-2">${[...lots].reverse().map(l => `<div><div class="flex justify-between text-[11px]"><span class="text-slate-600">${formatDateTR(l.date)} • ${formatCurrency(l.amt)}</span><span class="font-bold ${pcls(l.p)}">${pct(l.p)} <span class="font-normal text-slate-400">(${sTL(l.pl)})</span></span></div><div class="h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full rounded-full" style="width:${Math.abs(l.p) / mp * 100}%;background:${l.p >= 0 ? '#10b981' : '#f43f5e'}"></div></div></div>`).join('')}</div><p class="text-[10px] text-slate-400">Her alımın fiyatı, güncel fon fiyatıyla kıyaslanır.</p>`) : '';
+
+      // Kayıtlar
+      const chipC = { buy: 'bg-emerald-50 text-emerald-600', sell: 'bg-rose-50 text-rose-600', price: 'bg-slate-200 text-slate-600' };
+      const rows = [...S.recs].reverse().map(r => {
+        const det = [r.fundPrice > 0 ? `Fon ${fN(r.fundPrice)}` : '', r.usd > 0 ? `$ ${fN(r.usd, 4)}` : '', r.gold > 0 ? `Altın ${fN(r.gold, 2)}` : '', r.jpy > 0 ? `¥ ${fN(r.jpy, 2)}` : '', r.total > 0 ? `Toplam ${formatCurrency(r.total)}` : ''].filter(Boolean).join(' • ');
+        return `<div class="p-2.5 rounded-xl bg-slate-50 flex items-center justify-between gap-2"><div class="min-w-0"><div class="flex items-center gap-1.5"><span class="text-xs font-bold text-slate-900">${formatDateTR(r.date)}</span><span class="px-1.5 py-0.5 text-[9px] font-bold rounded-md ${chipC[r.type]}">${INV_TYPES[r.type]}</span></div><div class="text-[10px] text-slate-400 truncate mt-0.5">${det}</div></div><div class="flex items-center gap-1 shrink-0">${r.amount > 0 ? `<span class="text-xs font-extrabold ${r.type === 'sell' ? 'text-rose-600' : 'text-slate-900'}">${r.type === 'sell' ? '−' : ''}${formatCurrency(r.amount)}</span>` : ''}<button onclick="openInvModal('${r.id}')" class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button><button onclick="openDeleteModal('invest','${r.id}')" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div></div>`;
+      }).join('');
+      el.innerHTML = cards + story + ch1 + ch2 + ch3 + ch4 + invCard('Güncel Oranlar', 'coins', rates) + invCard(`Kayıtlar (${S.recs.length})`, 'list', `<div class="space-y-1.5 max-h-96 overflow-y-auto">${rows}</div>`) + '<div id="invSim"></div>';
+      renderSim(S);
+    }
+
+    function invTypeChange() {
+      const t = document.getElementById('invType').value;
+      document.getElementById('invAmountWrap').classList.toggle('hidden', t === 'price');
+      document.getElementById('invAmount').required = t !== 'price';
+      document.getElementById('invPrice').required = t === 'buy';
+      document.getElementById('invPriceReq').textContent = t === 'buy' ? '*' : '';
+    }
+
+    function openInvModal(id) {
+      editingInvId = id || null;
+      const r = id ? investments.find(i => i.id === id) : null;
+      const v = x => (x > 0 ? x : '');
+      document.getElementById('invModalTitle').textContent = r ? 'Kaydı Düzenle' : 'Yeni Yatırım Kaydı';
+      document.getElementById('invType').value = r ? r.type : 'buy';
+      document.getElementById('invDate').value = r ? r.date : new Date().toISOString().slice(0, 10);
+      document.getElementById('invAmount').value = r ? v(r.amount) : '';
+      document.getElementById('invPrice').value = r ? v(r.fundPrice) : '';
+      document.getElementById('invGold').value = r ? v(r.gold) : '';
+      document.getElementById('invUsd').value = r ? v(r.usd) : '';
+      document.getElementById('invJpy').value = r ? v(r.jpy) : '';
+      document.getElementById('invTotal').value = r ? v(r.total) : '';
+      invTypeChange();
+      openM('invModal');
+    }
+
+    async function handleSaveInv(e) {
+      e.preventDefault();
+      const g = id => document.getElementById(id).value, n = id => Number(g(id)) || 0;
+      const type = g('invType');
+      const payload = { id: editingInvId || ('inv_' + Date.now()), type, date: g('invDate'), amount: type === 'price' ? 0 : n('invAmount'),
+        fundPrice: n('invPrice'), gold: n('invGold'), usd: n('invUsd'), jpy: n('invJpy'), total: n('invTotal') };
+      if (editingInvId) investments = investments.map(i => i.id === editingInvId ? payload : i);
+      else investments.push(payload);
+      closeM('invModal');
+      renderAll();
+      await saveToCloud();
+    }
+
+    // ===================== SİMÜLASYON =====================
+    let simTarget = null, simMonthly = null;
+    function renderSim(S) {
+      const el = document.getElementById('invSim');
+      if (!el) return;
+      const DAY = 864e5, kf = v => (v / 1000).toFixed(0) + ' B';
+      const pr = S.tl.filter(p => p.price);
+      const lastT = S.tl[S.tl.length - 1].t;
+      if (pr.length < 2 || pr[pr.length - 1].t <= pr[0].t || !S.price) {
+        el.innerHTML = invCard('Simülasyon', 'sliders-horizontal', '<p class="py-4 text-center text-xs text-slate-400">Simülasyon için farklı iki tarihte fon fiyatı kaydı gerekli.</p>');
+        return;
+      }
+      const dRate = a => a.length > 1 && a[a.length - 1].t > a[0].t ? Math.pow(a[a.length - 1].v / a[0].v, DAY / (a[a.length - 1].t - a[0].t)) - 1 : null;
+      const gd = dRate(pr.map(p => ({ t: p.t, v: p.price })));
+      const gu = dRate(S.tl.filter(p => p.usd).map(p => ({ t: p.t, v: p.usd })));
+      const gg = dRate(S.tl.filter(p => p.gold).map(p => ({ t: p.t, v: p.gold })));
+      const lm = new Date(lastT), baseKey = `${lm.getFullYear()}-${String(lm.getMonth() + 1).padStart(2, '0')}`;
+      const opts = []; for (let i = 1; i <= 18; i++) opts.push(addMonthsToKey(baseKey, i));
+      if (!simTarget || !opts.includes(simTarget)) simTarget = opts.find(k => k.endsWith('-05')) || opts[5];
+      if (simMonthly === null) simMonthly = Math.round(S.invested / Math.max(1, (lastT - S.tl[0].t) / DAY / 30.4) / 1000) * 1000;
+      const [ty, tm] = simTarget.split('-').map(Number);
+      const T = new Date(ty, tm, 0).getTime();
+      const addM = (t, k) => { const d = new Date(t); d.setMonth(d.getMonth() + k); return d.getTime(); };
+      const units0 = S.value / S.price;
+      const sim = m => {
+        const g = Math.exp(m * Math.log(1 + gd)) - 1, P = t => S.price * Math.pow(1 + g, (t - lastT) / DAY);
+        let u = units0, paid = 0; const pts = [{ t: lastT, v: S.value }];
+        for (let k = 1; ; k++) { const t = addM(lastT, k); if (t >= T) break; if (simMonthly > 0) { u += simMonthly / P(t); paid += simMonthly; } pts.push({ t, v: u * P(t) }); }
+        const end = u * P(T); pts.push({ t: T, v: end });
+        const cost = S.net + paid;
+        return { pts, end, paid, price: P(T), profit: end - cost, ret: cost ? (end - cost) / (S.invested + paid) : 0 };
+      };
+      const sc = [{ n: 'Temkinli', d: 'yarı hız', m: 0.5, c: '#f59e0b' }, { n: 'Mevcut hız', d: 'şimdiye kadarki', m: 1, c: '#4f46e5' }, { n: 'İyimser', d: '1,5 kat hız', m: 1.5, c: '#10b981' }].map(s => ({ ...s, ...sim(s.m) }));
+      const chart = lineSvg([{ name: 'Geçmiş', color: '#94a3b8', data: S.tl.map(p => ({ t: p.t, v: p.value })) }, ...sc.map(s => ({ name: s.n, color: s.c, data: s.pts }))], kf);
+      const cardsH = sc.map(s => `<div class="p-3 rounded-xl border border-slate-200 space-y-0.5" style="border-left:4px solid ${s.c}"><div class="flex justify-between items-baseline"><span class="text-xs font-bold text-slate-900">${s.n} <span class="font-normal text-slate-400 text-[10px]">(${s.d})</span></span><span class="text-sm font-extrabold text-slate-900">${formatCurrency(s.end)}</span></div><div class="flex justify-between text-[11px] text-slate-500"><span>Fon fiyatı ≈ ${fN(s.price)} (${pct(s.price / S.price - 1)})</span><span class="font-semibold ${pcls(s.profit)}">${sTL(s.profit)} • ${pct(s.ret)}</span></div></div>`).join('');
+      const mid = sc[1], extra = [];
+      if (gu !== null && S.usd) { const u = S.usd * Math.pow(1 + gu, (T - lastT) / DAY); extra.push(`Dolar geçmiş hızla giderse ≈ ${b2(fN(u, 2) + ' ₺')}; "Mevcut hız" senaryosunda fon ≈ ${b2('$' + fN(mid.end / u, 0))} eder (şu an $${fN(S.value / S.usd, 0)}).`); }
+      if (gg !== null && S.gold) { const g2 = S.gold * Math.pow(1 + gg, (T - lastT) / DAY); extra.push(`Gram altın ≈ ${b2(fN(g2, 0) + ' ₺')} olursa fon ≈ ${b2(fN(mid.end / g2, 0) + ' gram')} altın değerinde (şu an ${fN(S.value / S.gold, 0)} gram).`); }
+      function b2(t) { return `<strong>${t}</strong>`; }
+      const ctrl = `<div class="grid grid-cols-2 gap-3"><div><label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Hedef Ay</label><select onchange="simTarget=this.value;renderSim(invCalc())" class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm">${opts.map(o => `<option value="${o}" ${o === simTarget ? 'selected' : ''}>${formatMonthKey(o)}</option>`).join('')}</select></div><div><label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Aylık Ekleme (TL)</label><input type="number" min="0" step="1000" value="${simMonthly}" onchange="simMonthly=Math.max(0,Number(this.value)||0);renderSim(invCalc())" class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm font-bold" /></div></div>`;
+      el.innerHTML = invCard('Simülasyon', 'sliders-horizontal', `${ctrl}
+        <p class="text-[11px] text-slate-600 leading-relaxed">Fon fiyatı kayıtlı veride günlük bileşik büyüyerek yıllık yaklaşık ${b2(pct(Math.pow(1 + gd, 365) - 1))} hızıyla artmış. Bu hız ${formatMonthKey(simTarget)} sonuna kadar sürerse ve her ay ${b2(formatCurrency(simMonthly))} eklerseniz portföy değeri ≈ ${b2(formatCurrency(mid.end))} olur (toplam ek yatırım ${formatCurrency(mid.paid)}).</p>
+        ${chart}<div class="space-y-2">${cardsH}</div>
+        ${extra.length ? `<ul class="space-y-1 text-[11px] text-slate-600">${extra.map(x => `<li>• ${x}</li>`).join('')}</ul>` : ''}
+        <p class="text-[10px] text-slate-400 leading-relaxed">Bu bir tahmindir; yalnızca kayıtlı geçmiş fiyat hızını devam ettirir. Veri kısa olduğu için sonuçlar gerçekle ciddi biçimde farklı çıkabilir, yatırım tavsiyesi değildir.</p>`);
+      lucide.createIcons();
     }
 
     // Başlangıç Çalıştırma

@@ -496,16 +496,22 @@
 
             if (snap.exists()) {
                 const data = snap.data();
-                if (data && Array.isArray(data.trips) && data.trips.length > 0) {
+                if (data && Array.isArray(data.trips)) {
                     window.trips = data.trips;
-                    if (!window.trips.some(t => t.id === window.activeTripId)) {
-                        window.activeTripId = window.trips[0].id;
+                    if (window.trips.length > 0) {
+                        if (!window.trips.some(t => t.id === window.activeTripId)) {
+                            window.activeTripId = window.trips[0].id;
+                        }
+                    } else {
+                        window.activeTripId = null;
                     }
                     window.refreshAllViews();
                 }
             } else {
-                // Veritabanı boşsa ilk veriyi gönder
-                window.syncTripsToCloud();
+                // Bulutta henüz doküman yoksa boş liste ile başlat
+                window.trips = [];
+                window.activeTripId = null;
+                window.refreshAllViews();
             }
         }, (error) => {
             console.error("Firestore okuma hatası:", error);
@@ -520,7 +526,7 @@
                     trips: window.trips,
                     lastUpdated: new Date().toISOString()
                 });
-                updateCloudStatus("", "bg-emerald-500");
+                updateCloudStatus("Bulut Bağlı", "bg-emerald-500");
             } catch (error) {
                 console.error("Buluta kaydetme hatası:", error);
                 updateCloudStatus("Kayıt Hatası", "bg-rose-500");
@@ -538,46 +544,8 @@
         let activeTab = 'itinerary';
         let pendingCalendarDate = null; // Tarih aralığını genişletmek için bekletilen tarih
 
-        // Başlangıç Mock / Hazır Verileri
-        window.trips = [
-            {
-                id: "trip-1",
-                name: "Ege & Akdeniz Kıyı Rotası",
-                startDate: "2026-06-10",
-                endDate: "2026-06-15",
-                description: "Mavi tur, antik kent keşifleri ve yerel lezzetler gezisi.",
-                places: [
-                    { id: "pl-1", name: "Patara Antik Kenti & Plajı", location: "Kaş / Antalya", note: "Kum tepelerinde gün batımı izlenecek. Müze Kart geçerli." },
-                    { id: "pl-2", name: "Kaputaş Plajı", location: "Kalkan Yolu", note: "Erken saatte gidilmeli, otopark sınırlı." },
-                    { id: "pl-3", name: "Kekova Batık Şehir", location: "Demre", note: "Kano turu önerilir." }
-                ],
-                checklist: [
-                    { id: "cl-1", text: "Kimlik & Müze Kart", category: "Belgeler", checked: true },
-                    { id: "cl-2", text: "Su altı kamerası / GoPro", category: "Elektronik", checked: false },
-                    { id: "cl-3", text: "Deniz ayakkabısı", category: "Giyim", checked: true },
-                    { id: "cl-4", text: "Yüksek faktörlü güneş kremi", category: "Kişisel Bakım", checked: false }
-                ],
-                shoppingList: [
-                    { id: "sp-1", text: "Doğal Zeytinyağı ve Kekik", category: "Yöresel Lezzet & Yiyecek", target: "Ev için", checked: false },
-                    { id: "sp-2", text: "Kaş temalı buzdolabı magneti", category: "Hediyelik Eşya", target: "Arkadaşlara", checked: true },
-                    { id: "sp-3", text: "El dokuması şal / peştemal", category: "Giyim & Aksesuar", target: "Kendime", checked: false }
-                ],
-                itineraryDays: {
-                    "2026-06-10": [
-                        { id: "act-1", time: "09:30", category: "transport", title: "Havalimanı Karşılama & Araç Alış", location: "Dalaman Havalimanı", notes: "Kiralama sözleşmesi teslim alınacak." },
-                        { id: "act-2", time: "13:00", category: "food", title: "Fethiye Kordon Öğle Yemeği", location: "Fethiye Marina", notes: "Balık pazarında taze meze ve balık tercihi." },
-                        { id: "act-3", time: "15:30", category: "hotel", title: "Otele Giriş & Dinlenme", location: "Kaş Merkez Butik Otel", notes: "Check-in saati 14:00 sonrası." },
-                        { id: "act-4", time: "17:30", category: "shopping", title: "Kaş Çarşısı Hediyelik Alışverişi", location: "Uzun Çarşı", notes: "Ahşap el işleri ve magnet bakılacak." },
-                        { id: "act-5", time: "19:30", category: "activity", title: "Kaş Sokakları & Antik Tiyatroda Gün Batımı", location: "Antiphellos Tiyatrosu", notes: "Yanımıza içecek almayı unutmayalım." }
-                    ],
-                    "2026-06-11": [
-                        { id: "act-6", time: "08:30", category: "food", title: "Serpme Köy Kahvaltısı", location: "Çukurbağ Yarımadası", notes: "" },
-                        { id: "act-7", time: "11:00", category: "sightseeing", title: "Kaputaş Kanyonu & Yüzme Molası", location: "Kaputaş Plajı", notes: "187 basamak inilecek, terlik yerine rahat ayakkabı." }
-                    ]
-                }
-            }
-        ];
-
+        // Başlangıç Mock/Taslak Verileri Kaldırıldı (Yalnızca buluttan çekilir)
+        window.trips = [];
         let trips = window.trips;
 
         // Buluta kaydetme tetikleyicisi
@@ -600,12 +568,7 @@
 
         // --- Başlangıç Yüklemesi ---
         window.addEventListener('DOMContentLoaded', () => {
-            activeTripId = trips[0].id;
-            selectedCalendarDateStr = trips[0].startDate;
-            
-            const startD = parseLocalDate(trips[0].startDate);
-            currentCalendarDate = new Date(startD.getFullYear(), startD.getMonth(), 1);
-
+            currentCalendarDate = new Date();
             window.refreshAllViews();
         });
 
@@ -660,12 +623,22 @@
 
         // --- Aktif Seyahat ve Seçici İşlemleri ---
         function getActiveTrip() {
-            return trips.find(t => t.id === activeTripId) || trips[0];
+            return trips.find(t => t.id === activeTripId) || null;
         }
 
         function renderTripSelector() {
             const selectEl = document.getElementById('activeTripSelect');
             selectEl.innerHTML = '';
+
+            if (trips.length === 0) {
+                const opt = document.createElement('option');
+                opt.value = "";
+                opt.textContent = "Kayıtlı Seyahat Yok";
+                selectEl.appendChild(opt);
+                document.getElementById('tripCountBadge').textContent = '0 Seyahat';
+                return;
+            }
+
             trips.forEach(trip => {
                 const opt = document.createElement('option');
                 opt.value = trip.id;
@@ -679,11 +652,13 @@
         function changeActiveTrip(newId) {
             activeTripId = newId;
             const trip = getActiveTrip();
-            selectedCalendarDateStr = trip.startDate;
-            activeSelectedDayIndex = 0;
+            if (trip) {
+                selectedCalendarDateStr = trip.startDate;
+                activeSelectedDayIndex = 0;
 
-            const startD = parseLocalDate(trip.startDate);
-            currentCalendarDate = new Date(startD.getFullYear(), startD.getMonth(), 1);
+                const startD = parseLocalDate(trip.startDate);
+                currentCalendarDate = new Date(startD.getFullYear(), startD.getMonth(), 1);
+            }
 
             renderActiveTripOverview();
             renderCalendar();
@@ -696,7 +671,17 @@
         function renderActiveTripOverview() {
             const trip = getActiveTrip();
             const container = document.getElementById('tripSummaryCard');
-            if (!trip) return;
+            if (!container) return;
+
+            if (!trip) {
+                container.innerHTML = `
+                    <div class="text-center py-3 text-xs text-slate-400">
+                        <i class="fa-solid fa-map-location-dot text-lg mb-1 block text-slate-300"></i>
+                        Henüz bir seyahat planı bulunmuyor.<br>Yukarıdaki <b>"Yeni Seyahat"</b> butonuna basarak ilk planınızı oluşturun.
+                    </div>
+                `;
+                return;
+            }
 
             const days = getDatesInRange(trip.startDate, trip.endDate);
 
@@ -715,15 +700,14 @@
         }
 
         function deleteCurrentTrip() {
-            if (trips.length <= 1) {
-                showToast("En az bir seyahat bulunmalıdır.", "error");
-                return;
-            }
+            if (!activeTripId || trips.length === 0) return;
+
             trips = trips.filter(t => t.id !== activeTripId);
             window.trips = trips;
-            activeTripId = trips[0].id;
-            selectedCalendarDateStr = trips[0].startDate;
+            activeTripId = trips.length > 0 ? trips[0].id : null;
+            selectedCalendarDateStr = trips.length > 0 ? trips[0].startDate : null;
             activeSelectedDayIndex = 0;
+
             window.refreshAllViews();
             notifyDataChanged();
             showToast("Seyahat silindi.");
@@ -809,10 +793,13 @@
         }
 
         function handleSelectDateFromCalendar(dateStr) {
-            selectedCalendarDateStr = dateStr;
             const trip = getActiveTrip();
-            if (!trip) return;
-            
+            if (!trip) {
+                showToast("Önce bir seyahat oluşturmalısınız.", "error");
+                return;
+            }
+
+            selectedCalendarDateStr = dateStr;
             const tripDates = getDatesInRange(trip.startDate, trip.endDate);
             const matchIndex = tripDates.indexOf(dateStr);
 
@@ -822,7 +809,7 @@
                 renderCalendar();
                 renderDayTimeline();
             } else {
-                // Seyahat aralığı dışındaysa hata vermek yerine seyahat süresini genişletmeyi öner
+                // Seyahat aralığı dışındaysa seyahat süresini genişletmeyi öner
                 pendingCalendarDate = dateStr;
                 const formattedDate = formatDisplayDate(dateStr);
                 const msgEl = document.getElementById('expandModalMessage');
@@ -861,7 +848,29 @@
         // --- Günlük Zaman Çizelgesi (İtinerary) ---
         function renderDayTimeline() {
             const trip = getActiveTrip();
-            if (!trip) return;
+            const pillsContainer = document.getElementById('dayPillsContainer');
+            const timelineList = document.getElementById('timelineList');
+            const emptyDayState = document.getElementById('emptyDayState');
+
+            if (!trip) {
+                pillsContainer.innerHTML = '';
+                timelineList.innerHTML = '';
+                document.getElementById('currentTripDurationBadge').textContent = '0 Gün';
+                document.getElementById('currentDayTitle').innerHTML = 'Henüz Seyahat Yok';
+                emptyDayState.classList.remove('hidden');
+                emptyDayState.classList.add('flex');
+                emptyDayState.querySelector('p.font-medium').textContent = 'Kayıtlı bir seyahat bulunamadı.';
+                emptyDayState.querySelector('p.text-xs').textContent = 'Plan yapmaya başlamak için yukarıdan "Yeni Seyahat" butonuna tıklayın.';
+                emptyDayState.querySelector('button').onclick = openNewTripModal;
+                emptyDayState.querySelector('button').textContent = '+ Yeni Seyahat Başlat';
+                return;
+            }
+
+            // Normal seyahat akışı
+            emptyDayState.querySelector('p.font-medium').textContent = 'Bu gün için henüz bir plan eklenmemiş.';
+            emptyDayState.querySelector('p.text-xs').textContent = 'Müze ziyaretleri, restoran rezervasyonları ya da transfer detaylarını ekleyerek gününüzü organize edin.';
+            emptyDayState.querySelector('button').onclick = openAddPlanModal;
+            emptyDayState.querySelector('button').textContent = '+ İlk Aktiviteyi Ekle';
 
             const tripDates = getDatesInRange(trip.startDate, trip.endDate);
             if (tripDates.length === 0) return;
@@ -874,7 +883,6 @@
             selectedCalendarDateStr = currentDayDateStr;
 
             // Gün Hapları Butonları
-            const pillsContainer = document.getElementById('dayPillsContainer');
             pillsContainer.innerHTML = '';
 
             tripDates.forEach((dStr, idx) => {
@@ -908,10 +916,7 @@
             `;
 
             // Zaman Çizelgesi İçeriği
-            const timelineList = document.getElementById('timelineList');
-            const emptyDayState = document.getElementById('emptyDayState');
             timelineList.innerHTML = '';
-
             const dayPlans = (trip.itineraryDays && trip.itineraryDays[currentDayDateStr]) || [];
 
             if (dayPlans.length === 0) {
@@ -974,7 +979,7 @@
 
         function deletePlanItem(dateStr, itemId) {
             const trip = getActiveTrip();
-            if (trip.itineraryDays && trip.itineraryDays[dateStr]) {
+            if (trip && trip.itineraryDays && trip.itineraryDays[dateStr]) {
                 trip.itineraryDays[dateStr] = trip.itineraryDays[dateStr].filter(x => x.id !== itemId);
                 renderDayTimeline();
                 renderCalendar();
@@ -989,7 +994,7 @@
             const container = document.getElementById('placesGrid');
             container.innerHTML = '';
 
-            if (!trip.places || trip.places.length === 0) {
+            if (!trip || !trip.places || trip.places.length === 0) {
                 container.innerHTML = `
                     <div class="col-span-full py-8 text-center text-slate-400 text-xs">
                         <i class="fa-solid fa-map-pin text-2xl mb-2 text-slate-300 block"></i>
@@ -1018,6 +1023,7 @@
 
         function deletePlace(placeId) {
             const trip = getActiveTrip();
+            if (!trip) return;
             trip.places = (trip.places || []).filter(p => p.id !== placeId);
             renderPlaces();
             notifyDataChanged();
@@ -1030,8 +1036,7 @@
             const container = document.getElementById('checklistContainer');
             container.innerHTML = '';
 
-            const list = trip.checklist || [];
-            if (list.length === 0) {
+            if (!trip || !trip.checklist || trip.checklist.length === 0) {
                 container.innerHTML = `
                     <div class="py-8 text-center text-slate-400 text-xs">
                         <i class="fa-solid fa-list-ul text-2xl mb-2 text-slate-300 block"></i>
@@ -1041,7 +1046,7 @@
                 return;
             }
 
-            // Kategorilere grupla
+            const list = trip.checklist;
             const groups = {};
             list.forEach(item => {
                 if (!groups[item.category]) groups[item.category] = [];
@@ -1077,6 +1082,7 @@
 
         function toggleChecklistItem(id) {
             const trip = getActiveTrip();
+            if (!trip) return;
             const item = (trip.checklist || []).find(i => i.id === id);
             if (item) {
                 item.checked = !item.checked;
@@ -1087,6 +1093,7 @@
 
         function deleteChecklistItem(id) {
             const trip = getActiveTrip();
+            if (!trip) return;
             trip.checklist = (trip.checklist || []).filter(i => i.id !== id);
             renderChecklist();
             notifyDataChanged();
@@ -1100,8 +1107,7 @@
             if (!container) return;
             container.innerHTML = '';
 
-            const list = trip.shoppingList || [];
-            if (list.length === 0) {
+            if (!trip || !trip.shoppingList || trip.shoppingList.length === 0) {
                 container.innerHTML = `
                     <div class="py-8 text-center text-slate-400 text-xs">
                         <i class="fa-solid fa-bag-shopping text-2xl mb-2 text-slate-300 block"></i>
@@ -1111,7 +1117,7 @@
                 return;
             }
 
-            // Kategorilere göre grupla
+            const list = trip.shoppingList;
             const groups = {};
             list.forEach(item => {
                 const cat = item.category || 'Genel';
@@ -1149,6 +1155,7 @@
 
         function toggleShoppingItem(id) {
             const trip = getActiveTrip();
+            if (!trip) return;
             const item = (trip.shoppingList || []).find(i => i.id === id);
             if (item) {
                 item.checked = !item.checked;
@@ -1159,6 +1166,7 @@
 
         function deleteShoppingItem(id) {
             const trip = getActiveTrip();
+            if (!trip) return;
             trip.shoppingList = (trip.shoppingList || []).filter(i => i.id !== id);
             renderShoppingList();
             notifyDataChanged();
@@ -1254,6 +1262,11 @@
         }
 
         function openAddPlanModal() {
+            const trip = getActiveTrip();
+            if (!trip) {
+                showToast("Önce bir seyahat oluşturmalısınız.", "error");
+                return;
+            }
             document.getElementById('planTimeInput').value = "10:00";
             openModal('addPlanModal');
         }
@@ -1261,6 +1274,8 @@
         function handleCreatePlan(event) {
             event.preventDefault();
             const trip = getActiveTrip();
+            if (!trip) return;
+
             const tripDates = getDatesInRange(trip.startDate, trip.endDate);
             const currentDateStr = tripDates[activeSelectedDayIndex] || trip.startDate;
 
@@ -1294,12 +1309,19 @@
         }
 
         function openAddShoppingItemModal() {
+            const trip = getActiveTrip();
+            if (!trip) {
+                showToast("Önce bir seyahat oluşturmalısınız.", "error");
+                return;
+            }
             openModal('addShoppingModal');
         }
 
         function handleCreateShoppingItem(event) {
             event.preventDefault();
             const trip = getActiveTrip();
+            if (!trip) return;
+
             const text = document.getElementById('shoppingItemText').value.trim();
             const category = document.getElementById('shoppingCategorySelect').value;
             const target = document.getElementById('shoppingTargetInput').value.trim();
@@ -1323,12 +1345,19 @@
         }
 
         function openAddPlaceModal() {
+            const trip = getActiveTrip();
+            if (!trip) {
+                showToast("Önce bir seyahat oluşturmalısınız.", "error");
+                return;
+            }
             openModal('addPlaceModal');
         }
 
         function handleCreatePlace(event) {
             event.preventDefault();
             const trip = getActiveTrip();
+            if (!trip) return;
+
             const name = document.getElementById('placeNameInput').value.trim();
             const location = document.getElementById('placeLocationInput').value.trim();
             const note = document.getElementById('placeNoteInput').value.trim();
@@ -1352,12 +1381,19 @@
         }
 
         function openAddChecklistItemModal() {
+            const trip = getActiveTrip();
+            if (!trip) {
+                showToast("Önce bir seyahat oluşturmalısınız.", "error");
+                return;
+            }
             openModal('addChecklistModal');
         }
 
         function handleCreateChecklistItem(event) {
             event.preventDefault();
             const trip = getActiveTrip();
+            if (!trip) return;
+
             const text = document.getElementById('checklistItemText').value.trim();
             const category = document.getElementById('checklistCategorySelect').value;
 

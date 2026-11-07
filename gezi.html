@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rotam: Kapsamlı Seyahat Planlayıcı</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef8ff',
+                            100: '#d8eeff',
+                            200: '#b9e0ff',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#075985',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome İkonları -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Özel kaydırma çubuğu */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .calendar-day-selected {
+            background-color: #0284c7 !important;
+            color: #ffffff !important;
+        }
+        .calendar-day-in-range {
+            background-color: #e0f2fe !important;
+            color: #0369a1 !important;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased">
+
+    <!-- Üst Başlık (Navbar) -->
+    <header class="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 to-cyan-500 flex items-center justify-center text-white shadow-md shadow-sky-500/20">
+                    <i class="fa-solid fa-compass text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-sky-600 to-blue-800 leading-tight">Rotam</h1>
+                    <p class="text-xs text-slate-400">Akıllı Seyahat & Rota Planlayıcı</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button onclick="openNewTripModal()" class="inline-flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium rounded-xl shadow-sm transition-all shadow-sky-600/20 hover:shadow-md">
+                    <i class="fa-solid fa-plus"></i>
+                    <span class="hidden sm:inline">Yeni Seyahat</span>
+                </button>
+                <!-- Bulut Senkronizasyon Durum Rozeti -->
+                <div id="cloudSyncStatus" class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 rounded-xl text-xs font-medium text-slate-600 select-none">
+                    <span class="w-2 h-2 rounded-full bg-slate-400" id="cloudDot"></span>
+                    <span id="cloudStatusText">Bulut Bağlanıyor...</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Ana Gövde -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Sol Panel: Seyahatler & Takvim (4 Kolon) -->
+        <aside class="lg:col-span-4 flex flex-col gap-6">
+            
+            <!-- Aktif Seyahat Seçici & Özeti -->
+            <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+                <div class="flex justify-between items-center mb-3">
+                    <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">Aktif Seyahat</label>
+                    <span id="tripCountBadge" class="text-xs bg-slate-100 text-slate-600 px-2.5 py-0.5 rounded-full font-medium">1 Seyahat</span>
+                </div>
+                <div class="relative">
+                    <select id="activeTripSelect" onchange="changeActiveTrip(this.value)" class="w-full bg-slate-50 border border-slate-300 rounded-xl py-2.5 px-3 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 appearance-none cursor-pointer">
+                        <!-- JS ile dolar -->
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
+                        <i class="fa-solid fa-chevron-down text-xs"></i>
+                    </div>
+                </div>
+
+                <!-- Seçili Seyahat Hızlı Bilgi -->
+                <div id="tripSummaryCard" class="mt-4 pt-4 border-t border-slate-100 flex flex-col gap-2.5">
+                    <!-- Dinamik İçerik -->
+                </div>
+            </div>
+
+            <!-- İnteraktif Takvim Widget'ı -->
+            <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="font-bold text-slate-800 flex items-center gap-2 text-sm">
+                        <i class="fa-regular fa-calendar-days text-sky-600"></i>
+                        <span id="calendarMonthYear">Ay Yıl</span>
+                    </h2>
+                    <div class="flex items-center gap-1">
+                        <button onclick="prevMonth()" class="w-7 h-7 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-500 hover:text-slate-800 transition">
+                            <i class="fa-solid fa-chevron-left text-xs"></i>
+                        </button>
+                        <button onclick="nextMonth()" class="w-7 h-7 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-500 hover:text-slate-800 transition">
+                            <i class="fa-solid fa-chevron-right text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Günler Başlık -->
+                <div class="grid grid-cols-7 gap-1 text-center text-xs font-medium text-slate-400 mb-1">
+                    <div>Pt</div><div>Sa</div><div>Ça</div><div>Pe</div><div>Cu</div><div>Ct</div><div>Pz</div>
+                </div>
+
+                <!-- Ay Hücreleri -->
+                <div id="calendarGrid" class="grid grid-cols-7 gap-1 text-sm text-center">
+                    <!-- JS Takvim günleri -->
+                </div>
+
+                <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                    <span class="flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-sky-600"></span> Seçili Gün
+                    </span>
+                    <span class="flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-sky-200"></span> Seyahat Aralığı
+                    </span>
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- Sağ Ana Panel: Gün Gün Plan & Detaylar (8 Kolon) -->
+        <section class="lg:col-span-8 flex flex-col gap-6">
+
+            <!-- Gün Seçim Çubuğu (Yatay Kaydırılabilir) -->
+            <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-2">
+                        <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-100 text-sky-800" id="currentTripDurationBadge">0 Gün</span>
+                        <h2 class="text-base font-bold text-slate-800" id="currentDayTitle">Gün Detayı</h2>
+                    </div>
+                    <button onclick="openAddPlanModal()" class="inline-flex items-center gap-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-medium transition">
+                        <i class="fa-solid fa-clock"></i> Aktivite / Durak Ekle
+                    </button>
+                </div>
+
+                <!-- Gün Yatay Hapları -->
+                <div id="dayPillsContainer" class="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5">
+                    <!-- Dinamik Gün Butonları -->
+                </div>
+            </div>
+
+            <!-- Sekmeli Detay Görünümü: Günlük Plan, Gezilecek Yerler, Bavul Listesi, Alışveriş Listesi -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col flex-1">
+                <!-- Sekme Butonları -->
+                <div class="flex border-b border-slate-200 bg-slate-50/50 px-4 overflow-x-auto">
+                    <button onclick="switchTab('itinerary')" id="tab-itinerary" class="py-3 px-4 font-semibold text-xs sm:text-sm border-b-2 border-sky-600 text-sky-600 flex items-center gap-2 transition whitespace-nowrap">
+                        <i class="fa-solid fa-list-check"></i> Günlük Akış & Zaman Çizelgesi
+                    </button>
+                    <button onclick="switchTab('places')" id="tab-places" class="py-3 px-4 font-semibold text-xs sm:text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center gap-2 transition whitespace-nowrap">
+                        <i class="fa-solid fa-map-location-dot"></i> Gezilecek Yerler & Notlar
+                    </button>
+                    <button onclick="switchTab('checklist')" id="tab-checklist" class="py-3 px-4 font-semibold text-xs sm:text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center gap-2 transition whitespace-nowrap">
+                        <i class="fa-solid fa-suitcase-rolling"></i> Bavul & Kontrol Listesi
+                    </button>
+                    <button onclick="switchTab('shopping')" id="tab-shopping" class="py-3 px-4 font-semibold text-xs sm:text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center gap-2 transition whitespace-nowrap">
+                        <i class="fa-solid fa-bag-shopping"></i> Alışveriş Listesi
+                    </button>
+                </div>
+
+                <!-- Sekme 1: Zaman Çizelgesi (İtinerary) -->
+                <div id="content-itinerary" class="p-6 flex-1 flex flex-col">
+                    <div id="emptyDayState" class="hidden flex-col items-center justify-center py-12 text-center text-slate-400">
+                        <div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-2xl text-slate-400 mb-3">
+                            <i class="fa-regular fa-clock"></i>
+                        </div>
+                        <p class="font-medium text-slate-600">Bu gün için henüz bir plan eklenmemiş.</p>
+                        <p class="text-xs text-slate-400 mt-1 max-w-sm">Müze ziyaretleri, restoran rezervasyonları ya da transfer detaylarını ekleyerek gününüzü organize edin.</p>
+                        <button onclick="openAddPlanModal()" class="mt-4 px-4 py-2 bg-sky-600 text-white text-xs font-semibold rounded-xl shadow-sm hover:bg-sky-700 transition">
+                            + İlk Aktiviteyi Ekle
+                        </button>
+                    </div>
+
+                    <div id="timelineList" class="relative pl-6 space-y-6 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-200">
+                        <!-- Zaman Çizelgesi Maddeleri Dinamik Olarak Gelir -->
+                    </div>
+                </div>
+
+                <!-- Sekme 2: Gezilecek Yerler (Places) -->
+                <div id="content-places" class="p-6 flex-1 hidden flex-col">
+                    <div class="flex justify-between items-center mb-4">
+                        <p class="text-xs text-slate-500">Bu seyahatte mutlaka görülmesi gereken noktaları ve ipuçlarını not edin.</p>
+                        <button onclick="openAddPlaceModal()" class="px-3 py-1.5 text-xs bg-sky-600 text-white rounded-lg font-medium hover:bg-sky-700 transition">
+                            + Mekan Ekle
+                        </button>
+                    </div>
+
+                    <div id="placesGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Mekan Kartları -->
+                    </div>
+                </div>
+
+                <!-- Sekme 3: Bavul & Kontrol Listesi (Checklist) -->
+                <div id="content-checklist" class="p-6 flex-1 hidden flex-col">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h4 class="text-sm font-bold text-slate-800">Hazırlık Kontrol Listesi</h4>
+                            <p class="text-xs text-slate-500">Pasaport, biletler, priz adaptörü ve ihtiyaçları unutmayın.</p>
+                        </div>
+                        <button onclick="openAddChecklistItemModal()" class="px-3 py-1.5 text-xs bg-sky-600 text-white rounded-lg font-medium hover:bg-sky-700 transition">
+                            + Madde Ekle
+                        </button>
+                    </div>
+
+                    <!-- Kategori Filtresi / Listesi -->
+                    <div id="checklistContainer" class="space-y-3">
+                        <!-- Dinamik Kontrol Maddeleri -->
+                    </div>
+                </div>
+
+                <!-- Sekme 4: Alışveriş Listesi (Shopping) -->
+                <div id="content-shopping" class="p-6 flex-1 hidden flex-col">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h4 class="text-sm font-bold text-slate-800">Alınacaklar & Hediyelikler</h4>
+                            <p class="text-xs text-slate-500">Seyahatten alınacak hediyeler, hatıra eşyalar ve yerel lezzetler listesi.</p>
+                        </div>
+                        <button onclick="openAddShoppingItemModal()" class="px-3 py-1.5 text-xs bg-sky-600 text-white rounded-lg font-medium hover:bg-sky-700 transition">
+                            + Ürün Ekle
+                        </button>
+                    </div>
+
+                    <div id="shoppingContainer" class="space-y-3">
+                        <!-- Dinamik Alışveriş Maddeleri -->
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- MODALLAR -->
+
+    <!-- 0. Tarih Aralığı Dışı / Seyahati Genişlet Modalı -->
+    <div id="expandTripModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl text-center">
+            <div class="w-12 h-12 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center text-xl mx-auto mb-3">
+                <i class="fa-regular fa-calendar-plus"></i>
+            </div>
+            <h3 class="text-base font-bold text-slate-800 mb-1">Seyahat Tarihini Genişlet</h3>
+            <p class="text-xs text-slate-500 mb-4" id="expandModalMessage">
+                Seçtiğiniz tarih mevcut seyahatinizin dışında. Seyahat sürenizi bu tarihi kapsayacak şekilde güncellemek ister misiniz?
+            </p>
+            <div class="flex gap-2">
+                <button type="button" onclick="closeModal('expandTripModal')" class="flex-1 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition">İptal</button>
+                <button type="button" onclick="confirmExpandTripRange()" class="flex-1 py-2 text-xs font-semibold bg-sky-600 hover:bg-sky-700 text-white rounded-xl shadow-md transition">Tarihi Dahil Et</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. Yeni Seyahat Modalı -->
+    <div id="newTripModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-slate-800">Yeni Seyahat Oluştur</h3>
+                <button onclick="closeModal('newTripModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="handleCreateTrip(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Seyahat Adı / Destinasyon</label>
+                    <input type="text" id="tripNameInput" required placeholder="Örn: İtalya Turu, Kapadokya Kaçamağı" class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Başlangıç Tarihi</label>
+                        <input type="date" id="tripStartInput" required class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Bitiş Tarihi</label>
+                        <input type="date" id="tripEndInput" required class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Not / Kısa Açıklama</label>
+                    <textarea id="tripDescInput" rows="2" placeholder="Örn: Uçuş bilgileri, otel rezervasyonu..." class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeModal('newTripModal')" class="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-xl">İptal</button>
+                    <button type="submit" class="px-5 py-2 text-sm bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-xl shadow-md shadow-sky-600/20">Oluştur</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. Aktivite / Plan Ekle Modalı -->
+    <div id="addPlanModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-slate-800">Aktivite / Durak Ekle</h3>
+                <button onclick="closeModal('addPlanModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="handleCreatePlan(event)" class="space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Saat</label>
+                        <input type="time" id="planTimeInput" required class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Kategori</label>
+                        <select id="planCategoryInput" class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none bg-white">
+                            <option value="sightseeing">Gezilecek Yer</option>
+                            <option value="shopping">Alışveriş</option>
+                            <option value="food">Yeme - İçme</option>
+                            <option value="transport">Ulaşım / Transfer</option>
+                            <option value="hotel">Konaklama</option>
+                            <option value="activity">Etkinlik / Eğlence</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Başlık</label>
+                    <input type="text" id="planTitleInput" required placeholder="Örn: Eyfel Kulesi Gezisi veya Kapalıçarşı Alışverişi" class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Konum / Adres</label>
+                    <input type="text" id="planLocationInput" placeholder="Örn: Champ de Mars, 5 Av. Anatole" class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Açıklama / İpuçları</label>
+                    <textarea id="planNotesInput" rows="2" placeholder="Örn: Biletler online alındı, saat 14:00'te kapıda olunacak." class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeModal('addPlanModal')" class="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-xl">İptal</button>
+                    <button type="submit" class="px-5 py-2 text-sm bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-xl shadow-md">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 3. Alışveriş Listesi Ekle Modalı -->
+    <div id="addShoppingModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-slate-800">Alışveriş / Hediye Ekle</h3>
+                <button onclick="closeModal('addShoppingModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="handleCreateShoppingItem(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Alınacak Eşya / Hediye</label>
+                    <input type="text" id="shoppingItemText" required placeholder="Örn: Magnet, Yöresel Zeytinyağı, Kahve" class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Kategori</label>
+                        <select id="shoppingCategorySelect" class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none bg-white">
+                            <option value="Hediyelik Eşya">Hediyelik Eşya</option>
+                            <option value="Yöresel Lezzet & Yiyecek">Yöresel Lezzet & Yiyecek</option>
+                            <option value="Giyim & Aksesuar">Giyim & Aksesuar</option>
+                            <option value="Kozmetik / Parfüm">Kozmetik / Parfüm</option>
+                            <option value="Diğer">Diğer</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Kime / Not</label>
+                        <input type="text" id="shoppingTargetInput" placeholder="Örn: Aile için, Kendime" class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeModal('addShoppingModal')" class="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-xl">İptal</button>
+                    <button type="submit" class="px-5 py-2 text-sm bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-xl shadow-md">Ekle</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 4. Mekan / Not Ekle Modalı -->
+    <div id="addPlaceModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-slate-800">Gezilecek Yer / Not Ekle</h3>
+                <button onclick="closeModal('addPlaceModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="handleCreatePlace(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Mekan / Cazibe Merkezi</label>
+                    <input type="text" id="placeNameInput" required placeholder="Örn: Louvre Müzesi, Tarihi Kahveci" class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Bölge / Şehir</label>
+                    <input type="text" id="placeLocationInput" placeholder="Örn: Paris 1. Bölge" class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">İpuçları & Tavsiyeler</label>
+                    <textarea id="placeNoteInput" rows="3" placeholder="Örn: Salı günleri kapalıdır. Mona Lisa tablosu için sabahtan gidilmeli." class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeModal('addPlaceModal')" class="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-xl">İptal</button>
+                    <button type="submit" class="px-5 py-2 text-sm bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-xl shadow-md">Ekle</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 5. Bavul Listesi Ekle Modalı -->
+    <div id="addChecklistModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-slate-800">Hazırlık Maddesi Ekle</h3>
+                <button onclick="closeModal('addChecklistModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="handleCreateChecklistItem(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Eşya / Görev</label>
+                    <input type="text" id="checklistItemText" required placeholder="Örn: Pasaport, Şarj Adaptörü, Güneş Kremi" class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Kategori</label>
+                    <select id="checklistCategorySelect" class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none bg-white">
+                        <option value="Belgeler">Belgeler & Biletler</option>
+                        <option value="Elektronik">Elektronik</option>
+                        <option value="Giyim">Giyim & Aksesuar</option>
+                        <option value="Kişisel Bakım">Kişisel Bakım & Sağlık</option>
+                        <option value="Diğer">Diğer</option>
+                    </select>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeModal('addChecklistModal')" class="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-xl">İptal</button>
+                    <button type="submit" class="px-5 py-2 text-sm bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-xl shadow-md">Ekle</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bildirim / Toast Alanı -->
+    <div id="toastNotification" class="fixed bottom-5 right-5 z-50 bg-slate-800 text-white px-4 py-2.5 rounded-xl shadow-xl text-sm flex items-center gap-2 transform transition-all duration-300 opacity-0 pointer-events-none translate-y-3">
+        <i class="fa-solid fa-circle-check text-emerald-400" id="toastIcon"></i>
+        <span id="toastMessage">İşlem başarıyla gerçekleştirildi.</span>
+    </div>
+
+    <!-- Firebase SDK Modülü (Doğrudan Yapılandırılmış) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCYl784quimqJ_PCNAuZreWnmwsfnh14wY",
+            authDomain: "rotam-seyahat-planlayici.firebaseapp.com",
+            projectId: "rotam-seyahat-planlayici",
+            storageBucket: "rotam-seyahat-planlayici.firebasestorage.app",
+            messagingSenderId: "69835680",
+            appId: "1:69835680:web:ba200bdf4c4548ef0c22c5",
+            measurementId: "G-2018X8QP3C"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const tripDocRef = doc(db, 'artifacts', firebaseConfig.projectId, 'public', 'data', 'travel_plan', 'main_data');
+
+        function updateCloudStatus(text, dotClass) {
+            const statusText = document.getElementById('cloudStatusText');
+            const dot = document.getElementById('cloudDot');
+            if (statusText && dot) {
+                statusText.textContent = text;
+                dot.className = `w-2 h-2 rounded-full ${dotClass}`;
+            }
+        }
+
+        // Buluttan anlık dinleme (Realtime Sync)
+        onSnapshot(tripDocRef, (snap) => {
+            updateCloudStatus("Bulut Bağlı", "bg-emerald-500");
+
+            if (snap.exists()) {
+                const data = snap.data();
+                if (data && Array.isArray(data.trips) && data.trips.length > 0) {
+                    window.trips = data.trips;
+                    if (!window.trips.some(t => t.id === window.activeTripId)) {
+                        window.activeTripId = window.trips[0].id;
+                    }
+                    window.refreshAllViews();
+                }
+            } else {
+                // Veritabanı boşsa ilk veriyi gönder
+                window.syncTripsToCloud();
+            }
+        }, (error) => {
+            console.error("Firestore okuma hatası:", error);
+            updateCloudStatus("Bağlantı Hatası", "bg-rose-500");
+        });
+
+        // Buluta veri kaydetme
+        window.syncTripsToCloud = async function() {
+            try {
+                updateCloudStatus("Kaydediliyor...", "bg-amber-400 animate-pulse");
+                await setDoc(tripDocRef, {
+                    trips: window.trips,
+                    lastUpdated: new Date().toISOString()
+                });
+                updateCloudStatus("", "bg-emerald-500");
+            } catch (error) {
+                console.error("Buluta kaydetme hatası:", error);
+                updateCloudStatus("Kayıt Hatası", "bg-rose-500");
+            }
+        };
+    </script>
+
+    <!-- Uygulama Scripti -->
+    <script>
+        // --- Uygulama Durumu (State) ---
+        let currentCalendarDate = new Date(); // Takvim gezintisi için
+        let selectedCalendarDateStr = null;  // YYYY-MM-DD
+        let activeTripId = null;
+        let activeSelectedDayIndex = 0; // 0: 1. Gün, 1: 2. Gün ...
+        let activeTab = 'itinerary';
+        let pendingCalendarDate = null; // Tarih aralığını genişletmek için bekletilen tarih
+
+        // Başlangıç Mock / Hazır Verileri
+        window.trips = [
+            {
+                id: "trip-1",
+                name: "Ege & Akdeniz Kıyı Rotası",
+                startDate: "2026-06-10",
+                endDate: "2026-06-15",
+                description: "Mavi tur, antik kent keşifleri ve yerel lezzetler gezisi.",
+                places: [
+                    { id: "pl-1", name: "Patara Antik Kenti & Plajı", location: "Kaş / Antalya", note: "Kum tepelerinde gün batımı izlenecek. Müze Kart geçerli." },
+                    { id: "pl-2", name: "Kaputaş Plajı", location: "Kalkan Yolu", note: "Erken saatte gidilmeli, otopark sınırlı." },
+                    { id: "pl-3", name: "Kekova Batık Şehir", location: "Demre", note: "Kano turu önerilir." }
+                ],
+                checklist: [
+                    { id: "cl-1", text: "Kimlik & Müze Kart", category: "Belgeler", checked: true },
+                    { id: "cl-2", text: "Su altı kamerası / GoPro", category: "Elektronik", checked: false },
+                    { id: "cl-3", text: "Deniz ayakkabısı", category: "Giyim", checked: true },
+                    { id: "cl-4", text: "Yüksek faktörlü güneş kremi", category: "Kişisel Bakım", checked: false }
+                ],
+                shoppingList: [
+                    { id: "sp-1", text: "Doğal Zeytinyağı ve Kekik", category: "Yöresel Lezzet & Yiyecek", target: "Ev için", checked: false },
+                    { id: "sp-2", text: "Kaş temalı buzdolabı magneti", category: "Hediyelik Eşya", target: "Arkadaşlara", checked: true },
+                    { id: "sp-3", text: "El dokuması şal / peştemal", category: "Giyim & Aksesuar", target: "Kendime", checked: false }
+                ],
+                itineraryDays: {
+                    "2026-06-10": [
+                        { id: "act-1", time: "09:30", category: "transport", title: "Havalimanı Karşılama & Araç Alış", location: "Dalaman Havalimanı", notes: "Kiralama sözleşmesi teslim alınacak." },
+                        { id: "act-2", time: "13:00", category: "food", title: "Fethiye Kordon Öğle Yemeği", location: "Fethiye Marina", notes: "Balık pazarında taze meze ve balık tercihi." },
+                        { id: "act-3", time: "15:30", category: "hotel", title: "Otele Giriş & Dinlenme", location: "Kaş Merkez Butik Otel", notes: "Check-in saati 14:00 sonrası." },
+                        { id: "act-4", time: "17:30", category: "shopping", title: "Kaş Çarşısı Hediyelik Alışverişi", location: "Uzun Çarşı", notes: "Ahşap el işleri ve magnet bakılacak." },
+                        { id: "act-5", time: "19:30", category: "activity", title: "Kaş Sokakları & Antik Tiyatroda Gün Batımı", location: "Antiphellos Tiyatrosu", notes: "Yanımıza içecek almayı unutmayalım." }
+                    ],
+                    "2026-06-11": [
+                        { id: "act-6", time: "08:30", category: "food", title: "Serpme Köy Kahvaltısı", location: "Çukurbağ Yarımadası", notes: "" },
+                        { id: "act-7", time: "11:00", category: "sightseeing", title: "Kaputaş Kanyonu & Yüzme Molası", location: "Kaputaş Plajı", notes: "187 basamak inilecek, terlik yerine rahat ayakkabı." }
+                    ]
+                }
+            }
+        ];
+
+        let trips = window.trips;
+
+        // Buluta kaydetme tetikleyicisi
+        function notifyDataChanged() {
+            if (typeof window.syncTripsToCloud === 'function') {
+                window.syncTripsToCloud();
+            }
+        }
+
+        window.refreshAllViews = function() {
+            trips = window.trips;
+            renderTripSelector();
+            renderActiveTripOverview();
+            renderCalendar();
+            renderDayTimeline();
+            renderPlaces();
+            renderChecklist();
+            renderShoppingList();
+        };
+
+        // --- Başlangıç Yüklemesi ---
+        window.addEventListener('DOMContentLoaded', () => {
+            activeTripId = trips[0].id;
+            selectedCalendarDateStr = trips[0].startDate;
+            
+            const startD = parseLocalDate(trips[0].startDate);
+            currentCalendarDate = new Date(startD.getFullYear(), startD.getMonth(), 1);
+
+            window.refreshAllViews();
+        });
+
+        // --- Tarih Yardımcı Fonksiyonları ---
+        function parseLocalDate(dateStr) {
+            const [y, m, d] = dateStr.split('-').map(Number);
+            return new Date(y, m - 1, d);
+        }
+
+        function formatDateISO(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        function formatDisplayDate(dateStr) {
+            if (!dateStr) return "";
+            const d = parseLocalDate(dateStr);
+            return d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+        }
+
+        function getDatesInRange(startStr, endStr) {
+            const dates = [];
+            let curr = parseLocalDate(startStr);
+            const end = parseLocalDate(endStr);
+            while (curr <= end) {
+                dates.push(formatDateISO(curr));
+                curr.setDate(curr.getDate() + 1);
+            }
+            return dates;
+        }
+
+        // --- Bildirim Toast Gösterme ---
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toastNotification');
+            const msgEl = document.getElementById('toastMessage');
+            const iconEl = document.getElementById('toastIcon');
+
+            msgEl.textContent = message;
+            if (type === 'error') {
+                iconEl.className = 'fa-solid fa-circle-exclamation text-rose-400';
+            } else {
+                iconEl.className = 'fa-solid fa-circle-check text-emerald-400';
+            }
+
+            toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-3');
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-3');
+            }, 3000);
+        }
+
+        // --- Aktif Seyahat ve Seçici İşlemleri ---
+        function getActiveTrip() {
+            return trips.find(t => t.id === activeTripId) || trips[0];
+        }
+
+        function renderTripSelector() {
+            const selectEl = document.getElementById('activeTripSelect');
+            selectEl.innerHTML = '';
+            trips.forEach(trip => {
+                const opt = document.createElement('option');
+                opt.value = trip.id;
+                opt.textContent = trip.name;
+                if (trip.id === activeTripId) opt.selected = true;
+                selectEl.appendChild(opt);
+            });
+            document.getElementById('tripCountBadge').textContent = `${trips.length} Seyahat`;
+        }
+
+        function changeActiveTrip(newId) {
+            activeTripId = newId;
+            const trip = getActiveTrip();
+            selectedCalendarDateStr = trip.startDate;
+            activeSelectedDayIndex = 0;
+
+            const startD = parseLocalDate(trip.startDate);
+            currentCalendarDate = new Date(startD.getFullYear(), startD.getMonth(), 1);
+
+            renderActiveTripOverview();
+            renderCalendar();
+            renderDayTimeline();
+            renderPlaces();
+            renderChecklist();
+            renderShoppingList();
+        }
+
+        function renderActiveTripOverview() {
+            const trip = getActiveTrip();
+            const container = document.getElementById('tripSummaryCard');
+            if (!trip) return;
+
+            const days = getDatesInRange(trip.startDate, trip.endDate);
+
+            container.innerHTML = `
+                <div class="flex items-center justify-between text-xs text-slate-500">
+                    <span class="flex items-center gap-1.5"><i class="fa-regular fa-calendar text-sky-600"></i> ${formatDisplayDate(trip.startDate)} - ${formatDisplayDate(trip.endDate)}</span>
+                    <span class="font-semibold text-slate-700 bg-sky-50 text-sky-700 px-2 py-0.5 rounded-md">${days.length} Gün</span>
+                </div>
+                ${trip.description ? `<p class="text-xs text-slate-500 italic mt-1 line-clamp-2">${trip.description}</p>` : ''}
+                <div class="flex gap-2 mt-2 pt-2 border-t border-slate-100">
+                    <button onclick="deleteCurrentTrip()" class="text-[11px] text-rose-500 hover:text-rose-700 font-medium flex items-center gap-1">
+                        <i class="fa-regular fa-trash-can"></i> Seyahati Sil
+                    </button>
+                </div>
+            `;
+        }
+
+        function deleteCurrentTrip() {
+            if (trips.length <= 1) {
+                showToast("En az bir seyahat bulunmalıdır.", "error");
+                return;
+            }
+            trips = trips.filter(t => t.id !== activeTripId);
+            window.trips = trips;
+            activeTripId = trips[0].id;
+            selectedCalendarDateStr = trips[0].startDate;
+            activeSelectedDayIndex = 0;
+            window.refreshAllViews();
+            notifyDataChanged();
+            showToast("Seyahat silindi.");
+        }
+
+        // --- Takvim Mantığı ---
+        function renderCalendar() {
+            const grid = document.getElementById('calendarGrid');
+            const monthYearEl = document.getElementById('calendarMonthYear');
+            grid.innerHTML = '';
+
+            const year = currentCalendarDate.getFullYear();
+            const month = currentCalendarDate.getMonth();
+
+            const monthNames = [
+                "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
+                "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"
+            ];
+            monthYearEl.textContent = `${monthNames[month]} ${year}`;
+
+            // Ayın ilk günü (Pazartesi = 0 olacak şekilde dönüştür)
+            const firstDayIndex = (new Date(year, month, 1).getDay() + 6) % 7;
+            const totalDaysInMonth = new Date(year, month + 1, 0).getDate();
+            const prevMonthLastDay = new Date(year, month, 0).getDate();
+
+            const trip = getActiveTrip();
+            const tripDates = trip ? getDatesInRange(trip.startDate, trip.endDate) : [];
+
+            // Önceki ayın günleri
+            for (let i = firstDayIndex; i > 0; i--) {
+                const dayNum = prevMonthLastDay - i + 1;
+                const cell = document.createElement('div');
+                cell.className = "py-2 text-slate-300 text-xs";
+                cell.textContent = dayNum;
+                grid.appendChild(cell);
+            }
+
+            // Mevcut ayın günleri
+            for (let day = 1; day <= totalDaysInMonth; day++) {
+                const cell = document.createElement('button');
+                cell.type = 'button';
+                const cellDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                
+                let classes = "py-2 rounded-xl text-xs font-medium transition flex items-center justify-center relative hover:bg-slate-100 ";
+                
+                const isInTrip = tripDates.includes(cellDateStr);
+                const isSelected = selectedCalendarDateStr === cellDateStr;
+
+                if (isSelected) {
+                    classes += " calendar-day-selected font-bold shadow-sm";
+                } else if (isInTrip) {
+                    classes += " calendar-day-in-range font-semibold";
+                } else {
+                    classes += " text-slate-700";
+                }
+
+                // Aktivite işareti
+                if (trip && trip.itineraryDays && trip.itineraryDays[cellDateStr] && trip.itineraryDays[cellDateStr].length > 0) {
+                    const dot = document.createElement('span');
+                    dot.className = `w-1.5 h-1.5 rounded-full absolute bottom-0.5 ${isSelected ? 'bg-white' : 'bg-sky-600'}`;
+                    cell.appendChild(dot);
+                }
+
+                cell.className = classes;
+                cell.innerHTML = `<span>${day}</span>` + (cell.innerHTML);
+
+                cell.onclick = () => {
+                    handleSelectDateFromCalendar(cellDateStr);
+                };
+
+                grid.appendChild(cell);
+            }
+        }
+
+        function prevMonth() {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+            renderCalendar();
+        }
+
+        function nextMonth() {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+            renderCalendar();
+        }
+
+        function handleSelectDateFromCalendar(dateStr) {
+            selectedCalendarDateStr = dateStr;
+            const trip = getActiveTrip();
+            if (!trip) return;
+            
+            const tripDates = getDatesInRange(trip.startDate, trip.endDate);
+            const matchIndex = tripDates.indexOf(dateStr);
+
+            // Eğer tıklanan gün zaten seyahat aralığında ise doğrudan o güne git
+            if (matchIndex !== -1) {
+                activeSelectedDayIndex = matchIndex;
+                renderCalendar();
+                renderDayTimeline();
+            } else {
+                // Seyahat aralığı dışındaysa hata vermek yerine seyahat süresini genişletmeyi öner
+                pendingCalendarDate = dateStr;
+                const formattedDate = formatDisplayDate(dateStr);
+                const msgEl = document.getElementById('expandModalMessage');
+                if (msgEl) {
+                    msgEl.textContent = `Seçtiğiniz ${formattedDate} tarihi mevcut seyahatinizin (${formatDisplayDate(trip.startDate)} - ${formatDisplayDate(trip.endDate)}) dışında. Seyahatinizi bu tarihi kapsayacak şekilde uzatmak ister misiniz?`;
+                }
+                openModal('expandTripModal');
+            }
+        }
+
+        function confirmExpandTripRange() {
+            if (!pendingCalendarDate) return;
+            const trip = getActiveTrip();
+            if (!trip) return;
+
+            if (pendingCalendarDate < trip.startDate) {
+                trip.startDate = pendingCalendarDate;
+            } else if (pendingCalendarDate > trip.endDate) {
+                trip.endDate = pendingCalendarDate;
+            }
+
+            const updatedTripDates = getDatesInRange(trip.startDate, trip.endDate);
+            const newIndex = updatedTripDates.indexOf(pendingCalendarDate);
+            activeSelectedDayIndex = newIndex !== -1 ? newIndex : 0;
+            selectedCalendarDateStr = pendingCalendarDate;
+            pendingCalendarDate = null;
+
+            closeModal('expandTripModal');
+            renderActiveTripOverview();
+            renderCalendar();
+            renderDayTimeline();
+            notifyDataChanged();
+            showToast("Seyahat tarih aralığı güncellendi ve gün plana eklendi!");
+        }
+
+        // --- Günlük Zaman Çizelgesi (İtinerary) ---
+        function renderDayTimeline() {
+            const trip = getActiveTrip();
+            if (!trip) return;
+
+            const tripDates = getDatesInRange(trip.startDate, trip.endDate);
+            if (tripDates.length === 0) return;
+
+            if (activeSelectedDayIndex >= tripDates.length) {
+                activeSelectedDayIndex = 0;
+            }
+
+            const currentDayDateStr = tripDates[activeSelectedDayIndex];
+            selectedCalendarDateStr = currentDayDateStr;
+
+            // Gün Hapları Butonları
+            const pillsContainer = document.getElementById('dayPillsContainer');
+            pillsContainer.innerHTML = '';
+
+            tripDates.forEach((dStr, idx) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                const isCurrent = idx === activeSelectedDayIndex;
+                btn.className = `px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition flex flex-col items-center gap-0.5 ${
+                    isCurrent 
+                        ? 'bg-sky-600 text-white shadow-md shadow-sky-600/30' 
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                }`;
+
+                const dObj = parseLocalDate(dStr);
+                const dayName = dObj.toLocaleDateString('tr-TR', { weekday: 'short' });
+                const dayNum = dObj.getDate();
+
+                btn.innerHTML = `<span>${idx + 1}. Gün</span><span class="text-[10px] opacity-80">${dayNum} ${dayName}</span>`;
+                btn.onclick = () => {
+                    activeSelectedDayIndex = idx;
+                    selectedCalendarDateStr = dStr;
+                    renderCalendar();
+                    renderDayTimeline();
+                };
+                pillsContainer.appendChild(btn);
+            });
+
+            // Başlık Güncelle
+            document.getElementById('currentTripDurationBadge').textContent = `${tripDates.length} Günlük Rota`;
+            document.getElementById('currentDayTitle').innerHTML = `
+                <span class="text-sky-600">${activeSelectedDayIndex + 1}. Gün</span> - ${formatDisplayDate(currentDayDateStr)}
+            `;
+
+            // Zaman Çizelgesi İçeriği
+            const timelineList = document.getElementById('timelineList');
+            const emptyDayState = document.getElementById('emptyDayState');
+            timelineList.innerHTML = '';
+
+            const dayPlans = (trip.itineraryDays && trip.itineraryDays[currentDayDateStr]) || [];
+
+            if (dayPlans.length === 0) {
+                emptyDayState.classList.remove('hidden');
+                emptyDayState.classList.add('flex');
+                timelineList.classList.add('hidden');
+                return;
+            }
+
+            emptyDayState.classList.add('hidden');
+            emptyDayState.classList.remove('flex');
+            timelineList.classList.remove('hidden');
+
+            // Saat sırasına göre diz
+            const sortedPlans = [...dayPlans].sort((a, b) => a.time.localeCompare(b.time));
+
+            const categoryIcons = {
+                sightseeing: { icon: 'fa-landmark', bg: 'bg-amber-100 text-amber-600' },
+                shopping: { icon: 'fa-bag-shopping', bg: 'bg-rose-100 text-rose-600' },
+                food: { icon: 'fa-utensils', bg: 'bg-orange-100 text-orange-600' },
+                transport: { icon: 'fa-plane-departure', bg: 'bg-blue-100 text-blue-600' },
+                hotel: { icon: 'fa-hotel', bg: 'bg-purple-100 text-purple-600' },
+                activity: { icon: 'fa-ticket', bg: 'bg-emerald-100 text-emerald-600' }
+            };
+
+            sortedPlans.forEach((item) => {
+                const cat = categoryIcons[item.category] || categoryIcons.activity;
+                const itemDiv = document.createElement('div');
+                itemDiv.className = "relative flex items-start gap-3 group";
+
+                itemDiv.innerHTML = `
+                    <div class="absolute -left-[30px] top-0 w-8 h-8 rounded-full ${cat.bg} border-2 border-white flex items-center justify-center text-xs shadow-sm">
+                        <i class="fa-solid ${cat.icon}"></i>
+                    </div>
+                    <div class="bg-slate-50 hover:bg-slate-100/80 border border-slate-200/80 rounded-2xl p-4 flex-1 transition shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-sky-700 bg-sky-100/60 px-2 py-0.5 rounded-md flex items-center gap-1">
+                                <i class="fa-regular fa-clock text-[10px]"></i> ${item.time}
+                            </span>
+                            <button onclick="deletePlanItem('${currentDayDateStr}', '${item.id}')" class="text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition p-1">
+                                <i class="fa-regular fa-trash-can text-xs"></i>
+                            </button>
+                        </div>
+                        <h4 class="text-sm font-bold text-slate-800 mt-2">${item.title}</h4>
+                        ${item.location ? `
+                            <p class="text-xs text-slate-500 flex items-center gap-1.5 mt-1">
+                                <i class="fa-solid fa-location-dot text-slate-400"></i> ${item.location}
+                            </p>
+                        ` : ''}
+                        ${item.notes ? `
+                            <p class="text-xs text-slate-600 bg-white/70 p-2.5 rounded-xl border border-slate-100 mt-2.5">
+                                ${item.notes}
+                            </p>
+                        ` : ''}
+                    </div>
+                `;
+                timelineList.appendChild(itemDiv);
+            });
+        }
+
+        function deletePlanItem(dateStr, itemId) {
+            const trip = getActiveTrip();
+            if (trip.itineraryDays && trip.itineraryDays[dateStr]) {
+                trip.itineraryDays[dateStr] = trip.itineraryDays[dateStr].filter(x => x.id !== itemId);
+                renderDayTimeline();
+                renderCalendar();
+                notifyDataChanged();
+                showToast("Aktivite kaldırıldı.");
+            }
+        }
+
+        // --- Gezilecek Yerler (Places) ---
+        function renderPlaces() {
+            const trip = getActiveTrip();
+            const container = document.getElementById('placesGrid');
+            container.innerHTML = '';
+
+            if (!trip.places || trip.places.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full py-8 text-center text-slate-400 text-xs">
+                        <i class="fa-solid fa-map-pin text-2xl mb-2 text-slate-300 block"></i>
+                        Henüz kayıtlı bir mekan yok. "Mekan Ekle" butonuyla yeni yerler kaydedin.
+                    </div>
+                `;
+                return;
+            }
+
+            trip.places.forEach(place => {
+                const card = document.createElement('div');
+                card.className = "p-4 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-slate-50 transition relative group";
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <h4 class="font-bold text-sm text-slate-800">${place.name}</h4>
+                        <button onclick="deletePlace('${place.id}')" class="text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition">
+                            <i class="fa-regular fa-trash-can text-xs"></i>
+                        </button>
+                    </div>
+                    ${place.location ? `<p class="text-xs text-sky-600 mt-0.5"><i class="fa-solid fa-location-dot"></i> ${place.location}</p>` : ''}
+                    ${place.note ? `<p class="text-xs text-slate-600 mt-2 bg-white p-2 rounded-lg border border-slate-100">${place.note}</p>` : ''}
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function deletePlace(placeId) {
+            const trip = getActiveTrip();
+            trip.places = (trip.places || []).filter(p => p.id !== placeId);
+            renderPlaces();
+            notifyDataChanged();
+            showToast("Mekan listeden silindi.");
+        }
+
+        // --- Bavul & Kontrol Listesi (Checklist) ---
+        function renderChecklist() {
+            const trip = getActiveTrip();
+            const container = document.getElementById('checklistContainer');
+            container.innerHTML = '';
+
+            const list = trip.checklist || [];
+            if (list.length === 0) {
+                container.innerHTML = `
+                    <div class="py-8 text-center text-slate-400 text-xs">
+                        <i class="fa-solid fa-list-ul text-2xl mb-2 text-slate-300 block"></i>
+                        Kontrol listeniz boş. Unutmamak istediğiniz eşyaları ekleyin.
+                    </div>
+                `;
+                return;
+            }
+
+            // Kategorilere grupla
+            const groups = {};
+            list.forEach(item => {
+                if (!groups[item.category]) groups[item.category] = [];
+                groups[item.category].push(item);
+            });
+
+            for (const [catName, items] of Object.entries(groups)) {
+                const groupDiv = document.createElement('div');
+                groupDiv.className = "bg-slate-50 border border-slate-200 rounded-xl p-3";
+                
+                let itemsHtml = items.map(item => `
+                    <div class="flex items-center justify-between py-1.5 border-b border-slate-100 last:border-none group">
+                        <label class="flex items-center gap-2.5 cursor-pointer text-xs ${item.checked ? 'line-through text-slate-400' : 'text-slate-700 font-medium'}">
+                            <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleChecklistItem('${item.id}')" class="rounded text-sky-600 focus:ring-sky-500 w-4 h-4 cursor-pointer">
+                            <span>${item.text}</span>
+                        </label>
+                        <button onclick="deleteChecklistItem('${item.id}')" class="text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition">
+                            <i class="fa-regular fa-trash-can text-xs"></i>
+                        </button>
+                    </div>
+                `).join('');
+
+                groupDiv.innerHTML = `
+                    <h5 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center justify-between">
+                        <span>${catName}</span>
+                        <span class="text-[10px] font-normal lowercase bg-slate-200 px-2 py-0.5 rounded-full text-slate-600">${items.filter(i=>i.checked).length}/${items.length}</span>
+                    </h5>
+                    <div class="space-y-1">${itemsHtml}</div>
+                `;
+                container.appendChild(groupDiv);
+            }
+        }
+
+        function toggleChecklistItem(id) {
+            const trip = getActiveTrip();
+            const item = (trip.checklist || []).find(i => i.id === id);
+            if (item) {
+                item.checked = !item.checked;
+                renderChecklist();
+                notifyDataChanged();
+            }
+        }
+
+        function deleteChecklistItem(id) {
+            const trip = getActiveTrip();
+            trip.checklist = (trip.checklist || []).filter(i => i.id !== id);
+            renderChecklist();
+            notifyDataChanged();
+            showToast("Madde silindi.");
+        }
+
+        // --- Alışveriş Listesi (Shopping List) ---
+        function renderShoppingList() {
+            const trip = getActiveTrip();
+            const container = document.getElementById('shoppingContainer');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const list = trip.shoppingList || [];
+            if (list.length === 0) {
+                container.innerHTML = `
+                    <div class="py-8 text-center text-slate-400 text-xs">
+                        <i class="fa-solid fa-bag-shopping text-2xl mb-2 text-slate-300 block"></i>
+                        Alışveriş listeniz boş. "Ürün Ekle" butonuyla hediyelik veya yerel ihtiyaçlarınızı ekleyin.
+                    </div>
+                `;
+                return;
+            }
+
+            // Kategorilere göre grupla
+            const groups = {};
+            list.forEach(item => {
+                const cat = item.category || 'Genel';
+                if (!groups[cat]) groups[cat] = [];
+                groups[cat].push(item);
+            });
+
+            for (const [catName, items] of Object.entries(groups)) {
+                const groupDiv = document.createElement('div');
+                groupDiv.className = "bg-slate-50 border border-slate-200 rounded-xl p-3";
+
+                let itemsHtml = items.map(item => `
+                    <div class="flex items-center justify-between py-1.5 border-b border-slate-100 last:border-none group">
+                        <label class="flex items-center gap-2.5 cursor-pointer text-xs ${item.checked ? 'line-through text-slate-400' : 'text-slate-700 font-medium'}">
+                            <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleShoppingItem('${item.id}')" class="rounded text-sky-600 focus:ring-sky-500 w-4 h-4 cursor-pointer">
+                            <span>${item.text}</span>
+                            ${item.target ? `<span class="text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded ml-1 font-normal">${item.target}</span>` : ''}
+                        </label>
+                        <button onclick="deleteShoppingItem('${item.id}')" class="text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition">
+                            <i class="fa-regular fa-trash-can text-xs"></i>
+                        </button>
+                    </div>
+                `).join('');
+
+                groupDiv.innerHTML = `
+                    <h5 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center justify-between">
+                        <span>${catName}</span>
+                        <span class="text-[10px] font-normal lowercase bg-slate-200 px-2 py-0.5 rounded-full text-slate-600">${items.filter(i=>i.checked).length}/${items.length}</span>
+                    </h5>
+                    <div class="space-y-1">${itemsHtml}</div>
+                `;
+                container.appendChild(groupDiv);
+            }
+        }
+
+        function toggleShoppingItem(id) {
+            const trip = getActiveTrip();
+            const item = (trip.shoppingList || []).find(i => i.id === id);
+            if (item) {
+                item.checked = !item.checked;
+                renderShoppingList();
+                notifyDataChanged();
+            }
+        }
+
+        function deleteShoppingItem(id) {
+            const trip = getActiveTrip();
+            trip.shoppingList = (trip.shoppingList || []).filter(i => i.id !== id);
+            renderShoppingList();
+            notifyDataChanged();
+            showToast("Ürün listeden silindi.");
+        }
+
+        // --- Sekmeler Arası Geçiş ---
+        function switchTab(tabKey) {
+            activeTab = tabKey;
+            const tabs = ['itinerary', 'places', 'checklist', 'shopping'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-${t}`);
+                const content = document.getElementById(`content-${t}`);
+                if (btn && content) {
+                    if (t === tabKey) {
+                        btn.classList.add('border-sky-600', 'text-sky-600');
+                        btn.classList.remove('border-transparent', 'text-slate-500');
+                        content.classList.remove('hidden');
+                        content.classList.add('flex');
+                    } else {
+                        btn.classList.remove('border-sky-600', 'text-sky-600');
+                        btn.classList.add('border-transparent', 'text-slate-500');
+                        content.classList.add('hidden');
+                        content.classList.remove('flex');
+                    }
+                }
+            });
+        }
+
+        // --- Modal İşlemleri ve Form Submit ---
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.remove('hidden');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        function openNewTripModal() {
+            // Bugün ve 5 gün sonrasını hazır doldur
+            const today = new Date();
+            const future = new Date();
+            future.setDate(today.getDate() + 5);
+
+            document.getElementById('tripStartInput').value = formatDateISO(today);
+            document.getElementById('tripEndInput').value = formatDateISO(future);
+            openModal('newTripModal');
+        }
+
+        function handleCreateTrip(event) {
+            event.preventDefault();
+            const name = document.getElementById('tripNameInput').value.trim();
+            const startDate = document.getElementById('tripStartInput').value;
+            const endDate = document.getElementById('tripEndInput').value;
+            const desc = document.getElementById('tripDescInput').value.trim();
+
+            if (startDate > endDate) {
+                showToast("Bitiş tarihi başlangıçtan önce olamaz!", "error");
+                return;
+            }
+
+            const newTrip = {
+                id: 'trip-' + Date.now(),
+                name,
+                startDate,
+                endDate,
+                description: desc,
+                places: [],
+                checklist: [
+                    { id: 'cl-' + Date.now() + '-1', text: 'Kimlik / Pasaport', category: 'Belgeler', checked: false },
+                    { id: 'cl-' + Date.now() + '-2', text: 'Şarj Aleti & Powerbank', category: 'Elektronik', checked: false }
+                ],
+                shoppingList: [],
+                itineraryDays: {}
+            };
+
+            trips.push(newTrip);
+            window.trips = trips;
+            activeTripId = newTrip.id;
+            selectedCalendarDateStr = startDate;
+            activeSelectedDayIndex = 0;
+
+            const startD = parseLocalDate(startDate);
+            currentCalendarDate = new Date(startD.getFullYear(), startD.getMonth(), 1);
+
+            closeModal('newTripModal');
+            document.getElementById('tripNameInput').value = '';
+            document.getElementById('tripDescInput').value = '';
+
+            window.refreshAllViews();
+            notifyDataChanged();
+            showToast("Yeni seyahat başarıyla oluşturuldu!");
+        }
+
+        function openAddPlanModal() {
+            document.getElementById('planTimeInput').value = "10:00";
+            openModal('addPlanModal');
+        }
+
+        function handleCreatePlan(event) {
+            event.preventDefault();
+            const trip = getActiveTrip();
+            const tripDates = getDatesInRange(trip.startDate, trip.endDate);
+            const currentDateStr = tripDates[activeSelectedDayIndex] || trip.startDate;
+
+            const time = document.getElementById('planTimeInput').value;
+            const category = document.getElementById('planCategoryInput').value;
+            const title = document.getElementById('planTitleInput').value.trim();
+            const location = document.getElementById('planLocationInput').value.trim();
+            const notes = document.getElementById('planNotesInput').value.trim();
+
+            if (!trip.itineraryDays) trip.itineraryDays = {};
+            if (!trip.itineraryDays[currentDateStr]) trip.itineraryDays[currentDateStr] = [];
+
+            trip.itineraryDays[currentDateStr].push({
+                id: 'plan-' + Date.now(),
+                time,
+                category,
+                title,
+                location,
+                notes
+            });
+
+            closeModal('addPlanModal');
+            document.getElementById('planTitleInput').value = '';
+            document.getElementById('planLocationInput').value = '';
+            document.getElementById('planNotesInput').value = '';
+
+            renderDayTimeline();
+            renderCalendar();
+            notifyDataChanged();
+            showToast("Aktivite plana eklendi!");
+        }
+
+        function openAddShoppingItemModal() {
+            openModal('addShoppingModal');
+        }
+
+        function handleCreateShoppingItem(event) {
+            event.preventDefault();
+            const trip = getActiveTrip();
+            const text = document.getElementById('shoppingItemText').value.trim();
+            const category = document.getElementById('shoppingCategorySelect').value;
+            const target = document.getElementById('shoppingTargetInput').value.trim();
+
+            if (!trip.shoppingList) trip.shoppingList = [];
+            trip.shoppingList.push({
+                id: 'sp-' + Date.now(),
+                text,
+                category,
+                target,
+                checked: false
+            });
+
+            closeModal('addShoppingModal');
+            document.getElementById('shoppingItemText').value = '';
+            document.getElementById('shoppingTargetInput').value = '';
+
+            renderShoppingList();
+            notifyDataChanged();
+            showToast("Ürün alışveriş listesine eklendi!");
+        }
+
+        function openAddPlaceModal() {
+            openModal('addPlaceModal');
+        }
+
+        function handleCreatePlace(event) {
+            event.preventDefault();
+            const trip = getActiveTrip();
+            const name = document.getElementById('placeNameInput').value.trim();
+            const location = document.getElementById('placeLocationInput').value.trim();
+            const note = document.getElementById('placeNoteInput').value.trim();
+
+            if (!trip.places) trip.places = [];
+            trip.places.push({
+                id: 'place-' + Date.now(),
+                name,
+                location,
+                note
+            });
+
+            closeModal('addPlaceModal');
+            document.getElementById('placeNameInput').value = '';
+            document.getElementById('placeLocationInput').value = '';
+            document.getElementById('placeNoteInput').value = '';
+
+            renderPlaces();
+            notifyDataChanged();
+            showToast("Gezilecek yer kaydedildi!");
+        }
+
+        function openAddChecklistItemModal() {
+            openModal('addChecklistModal');
+        }
+
+        function handleCreateChecklistItem(event) {
+            event.preventDefault();
+            const trip = getActiveTrip();
+            const text = document.getElementById('checklistItemText').value.trim();
+            const category = document.getElementById('checklistCategorySelect').value;
+
+            if (!trip.checklist) trip.checklist = [];
+            trip.checklist.push({
+                id: 'cl-' + Date.now(),
+                text,
+                category,
+                checked: false
+            });
+
+            closeModal('addChecklistModal');
+            document.getElementById('checklistItemText').value = '';
+
+            renderChecklist();
+            notifyDataChanged();
+            showToast("Madde kontrol listesine eklendi!");
+        }
+    </script>
+</body>
+</html>

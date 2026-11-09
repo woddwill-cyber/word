@@ -157,14 +157,20 @@
 
             <!-- Gün Seçim Çubuğu (Yatay Kaydırılabilir) -->
             <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
-                <div class="flex items-center justify-between mb-3">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
                     <div class="flex items-center gap-2">
                         <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-100 text-sky-800" id="currentTripDurationBadge">0 Gün</span>
                         <h2 class="text-base font-bold text-slate-800" id="currentDayTitle">Gün Detayı</h2>
                     </div>
-                    <button onclick="openAddPlanModal()" class="inline-flex items-center gap-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-medium transition">
-                        <i class="fa-solid fa-clock"></i> Aktivite / Durak Ekle
-                    </button>
+                    <div class="flex items-center gap-2">
+                        <!-- Tüm Aktiviteleri Başka Güne Taşı Butonu -->
+                        <button onclick="openMoveDayActivitiesModal()" title="Bu gündeki tüm aktiviteleri başka bir güne taşı" class="inline-flex items-center gap-1.5 text-xs bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 px-3 py-1.5 rounded-lg font-medium transition">
+                            <i class="fa-solid fa-arrows-turn-to-dots"></i> Günü Taşı
+                        </button>
+                        <button onclick="openAddPlanModal()" class="inline-flex items-center gap-1.5 text-xs bg-sky-600 hover:bg-sky-700 text-white px-3 py-1.5 rounded-lg font-medium shadow-sm transition">
+                            <i class="fa-solid fa-plus"></i> Aktivite Ekle
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Gün Yatay Hapları -->
@@ -198,7 +204,7 @@
                             <i class="fa-regular fa-clock"></i>
                         </div>
                         <p class="font-medium text-slate-600">Bu gün için henüz bir plan eklenmemiş.</p>
-                        <p class="text-xs text-slate-400 mt-1 max-w-sm">Müze ziyaretleri, restoran rezervasyonları ya da transfer detaylarını ekleyerek gününüzü organize edin.</p>
+                        <p class="text-xs text-slate-400 mt-1 max-w-sm">Müze ziyaretleri, semt turları, restoran rezervasyonları ya da transfer detaylarını ekleyerek gününüzü organize edin.</p>
                         <button onclick="openAddPlanModal()" class="mt-4 px-4 py-2 bg-sky-600 text-white text-xs font-semibold rounded-xl shadow-sm hover:bg-sky-700 transition">
                             + İlk Aktiviteyi Ekle
                         </button>
@@ -334,6 +340,7 @@
                         <label class="block text-xs font-semibold text-slate-600 mb-1">Kategori</label>
                         <select id="planCategoryInput" class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none bg-white">
                             <option value="sightseeing">Gezilecek Yer</option>
+                            <option value="semt">Semt / Bölge Keşfi</option>
                             <option value="shopping">Alışveriş</option>
                             <option value="food">Yeme - İçme</option>
                             <option value="transport">Ulaşım / Transfer</option>
@@ -344,19 +351,100 @@
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Başlık</label>
-                    <input type="text" id="planTitleInput" required placeholder="Örn: Eyfel Kulesi Gezisi veya Kapalıçarşı Alışverişi" class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                    <input type="text" id="planTitleInput" required placeholder="Örn: Kadıköy Moda Sahili Yürüyüşü" class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Konum / Adres</label>
-                    <input type="text" id="planLocationInput" placeholder="Örn: Champ de Mars, 5 Av. Anatole" class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                    <input type="text" id="planLocationInput" placeholder="Örn: Moda Caddesi, Kadıköy" class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Açıklama / İpuçları</label>
-                    <textarea id="planNotesInput" rows="2" placeholder="Örn: Biletler online alındı, saat 14:00'te kapıda olunacak." class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none"></textarea>
+                    <textarea id="planNotesInput" rows="2" placeholder="Örn: Tarihi dondurmacıya uğranacak, sahil boyunca yürünecek." class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none"></textarea>
                 </div>
                 <div class="flex justify-end gap-2 pt-2">
                     <button type="button" onclick="closeModal('addPlanModal')" class="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-xl">İptal</button>
                     <button type="submit" class="px-5 py-2 text-sm bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-xl shadow-md">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2.1 Aktivite Düzenle Modalı -->
+    <div id="editPlanModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square text-sky-600"></i> Aktiviteyi Düzenle
+                </h3>
+                <button onclick="closeModal('editPlanModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="handleUpdatePlan(event)" class="space-y-4">
+                <input type="hidden" id="editPlanId">
+                <input type="hidden" id="editPlanDate">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Saat</label>
+                        <input type="time" id="editPlanTimeInput" required class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Kategori</label>
+                        <select id="editPlanCategoryInput" class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none bg-white">
+                            <option value="sightseeing">Gezilecek Yer</option>
+                            <option value="semt">Semt / Bölge Keşfi</option>
+                            <option value="shopping">Alışveriş</option>
+                            <option value="food">Yeme - İçme</option>
+                            <option value="transport">Ulaşım / Transfer</option>
+                            <option value="hotel">Konaklama</option>
+                            <option value="activity">Etkinlik / Eğlence</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Başlık</label>
+                    <input type="text" id="editPlanTitleInput" required class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Konum / Adres</label>
+                    <input type="text" id="editPlanLocationInput" class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Açıklama / İpuçları</label>
+                    <textarea id="editPlanNotesInput" rows="2" class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeModal('editPlanModal')" class="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-xl">İptal</button>
+                    <button type="submit" class="px-5 py-2 text-sm bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-xl shadow-md">Değişiklikleri Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2.2 Tüm Günü Taşı Modalı -->
+    <div id="moveDayModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-arrows-turn-to-dots text-amber-600"></i> Günün Aktivitelerini Taşı
+                </h3>
+                <button onclick="closeModal('moveDayModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <p class="text-xs text-slate-500 mb-4">
+                <span id="moveSourceDayLabel" class="font-bold text-slate-700">Seçili Gün</span> tarihindeki tüm aktiviteler seçtiğiniz hedef güne taşınacak ve bu gün boşaltılacaktır.
+            </p>
+            <form onsubmit="handleMoveDayActivities(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Hedef Gün Seçin</label>
+                    <select id="targetDaySelect" required class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white">
+                        <!-- JS ile doldurulacak -->
+                    </select>
+                </div>
+                <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-start gap-2">
+                    <i class="fa-solid fa-circle-info mt-0.5 text-amber-600"></i>
+                    <span>Eğer hedef günde zaten aktiviteler varsa, taşınan aktiviteler mevcut olanlarla birleştirilir ve saatlerine göre sıralanır.</span>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeModal('moveDayModal')" class="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-xl">İptal</button>
+                    <button type="submit" class="px-5 py-2 text-sm bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-xl shadow-md">Aktiviteleri Taşı</button>
                 </div>
             </form>
         </div>
@@ -496,22 +584,16 @@
 
             if (snap.exists()) {
                 const data = snap.data();
-                if (data && Array.isArray(data.trips)) {
+                if (data && Array.isArray(data.trips) && data.trips.length > 0) {
                     window.trips = data.trips;
-                    if (window.trips.length > 0) {
-                        if (!window.trips.some(t => t.id === window.activeTripId)) {
-                            window.activeTripId = window.trips[0].id;
-                        }
-                    } else {
-                        window.activeTripId = null;
+                    if (!window.trips.some(t => t.id === window.activeTripId)) {
+                        window.activeTripId = window.trips[0].id;
                     }
                     window.refreshAllViews();
                 }
             } else {
-                // Bulutta henüz doküman yoksa boş liste ile başlat
-                window.trips = [];
-                window.activeTripId = null;
-                window.refreshAllViews();
+                // Veritabanı boşsa ilk veriyi gönder
+                window.syncTripsToCloud();
             }
         }, (error) => {
             console.error("Firestore okuma hatası:", error);
@@ -544,8 +626,46 @@
         let activeTab = 'itinerary';
         let pendingCalendarDate = null; // Tarih aralığını genişletmek için bekletilen tarih
 
-        // Başlangıç Mock/Taslak Verileri Kaldırıldı (Yalnızca buluttan çekilir)
-        window.trips = [];
+        // Başlangıç Mock / Hazır Verileri
+        window.trips = [
+            {
+                id: "trip-1",
+                name: "Ege & Akdeniz Kıyı Rotası",
+                startDate: "2026-06-10",
+                endDate: "2026-06-15",
+                description: "Mavi tur, antik kent keşifleri ve yerel lezzetler gezisi.",
+                places: [
+                    { id: "pl-1", name: "Patara Antik Kenti & Plajı", location: "Kaş / Antalya", note: "Kum tepelerinde gün batımı izlenecek. Müze Kart geçerli." },
+                    { id: "pl-2", name: "Kaputaş Plajı", location: "Kalkan Yolu", note: "Erken saatte gidilmeli, otopark sınırlı." },
+                    { id: "pl-3", name: "Kekova Batık Şehir", location: "Demre", note: "Kano turu önerilir." }
+                ],
+                checklist: [
+                    { id: "cl-1", text: "Kimlik & Müze Kart", category: "Belgeler", checked: true },
+                    { id: "cl-2", text: "Su altı kamerası / GoPro", category: "Elektronik", checked: false },
+                    { id: "cl-3", text: "Deniz ayakkabısı", category: "Giyim", checked: true },
+                    { id: "cl-4", text: "Yüksek faktörlü güneş kremi", category: "Kişisel Bakım", checked: false }
+                ],
+                shoppingList: [
+                    { id: "sp-1", text: "Doğal Zeytinyağı ve Kekik", category: "Yöresel Lezzet & Yiyecek", target: "Ev için", checked: false },
+                    { id: "sp-2", text: "Kaş temalı buzdolabı magneti", category: "Hediyelik Eşya", target: "Arkadaşlara", checked: true },
+                    { id: "sp-3", text: "El dokuması şal / peştemal", category: "Giyim & Aksesuar", target: "Kendime", checked: false }
+                ],
+                itineraryDays: {
+                    "2026-06-10": [
+                        { id: "act-1", time: "09:30", category: "transport", title: "Havalimanı Karşılama & Araç Alış", location: "Dalaman Havalimanı", notes: "Kiralama sözleşmesi teslim alınacak." },
+                        { id: "act-2", time: "13:00", category: "food", title: "Fethiye Kordon Öğle Yemeği", location: "Fethiye Marina", notes: "Balık pazarında taze meze ve balık tercihi." },
+                        { id: "act-3", time: "15:30", category: "hotel", title: "Otele Giriş & Dinlenme", location: "Kaş Merkez Butik Otel", notes: "Check-in saati 14:00 sonrası." },
+                        { id: "act-4", time: "17:30", category: "semt", title: "Tarihi Kaş Sokakları Keşfi", location: "Kaş Merkez", notes: "Cumbalı evler ve begonvilli sokaklarda fotoğraf molası." },
+                        { id: "act-5", time: "19:30", category: "activity", title: "Antik Tiyatroda Gün Batımı", location: "Antiphellos Tiyatrosu", notes: "Yanımıza içecek almayı unutmayalım." }
+                    ],
+                    "2026-06-11": [
+                        { id: "act-6", time: "08:30", category: "food", title: "Serpme Köy Kahvaltısı", location: "Çukurbağ Yarımadası", notes: "" },
+                        { id: "act-7", time: "11:00", category: "sightseeing", title: "Kaputaş Kanyonu & Yüzme Molası", location: "Kaputaş Plajı", notes: "187 basamak inilecek, terlik yerine rahat ayakkabı." }
+                    ]
+                }
+            }
+        ];
+
         let trips = window.trips;
 
         // Buluta kaydetme tetikleyicisi
@@ -568,7 +688,12 @@
 
         // --- Başlangıç Yüklemesi ---
         window.addEventListener('DOMContentLoaded', () => {
-            currentCalendarDate = new Date();
+            activeTripId = trips[0].id;
+            selectedCalendarDateStr = trips[0].startDate;
+            
+            const startD = parseLocalDate(trips[0].startDate);
+            currentCalendarDate = new Date(startD.getFullYear(), startD.getMonth(), 1);
+
             window.refreshAllViews();
         });
 
@@ -623,22 +748,12 @@
 
         // --- Aktif Seyahat ve Seçici İşlemleri ---
         function getActiveTrip() {
-            return trips.find(t => t.id === activeTripId) || null;
+            return trips.find(t => t.id === activeTripId) || trips[0];
         }
 
         function renderTripSelector() {
             const selectEl = document.getElementById('activeTripSelect');
             selectEl.innerHTML = '';
-
-            if (trips.length === 0) {
-                const opt = document.createElement('option');
-                opt.value = "";
-                opt.textContent = "Kayıtlı Seyahat Yok";
-                selectEl.appendChild(opt);
-                document.getElementById('tripCountBadge').textContent = '0 Seyahat';
-                return;
-            }
-
             trips.forEach(trip => {
                 const opt = document.createElement('option');
                 opt.value = trip.id;
@@ -652,13 +767,11 @@
         function changeActiveTrip(newId) {
             activeTripId = newId;
             const trip = getActiveTrip();
-            if (trip) {
-                selectedCalendarDateStr = trip.startDate;
-                activeSelectedDayIndex = 0;
+            selectedCalendarDateStr = trip.startDate;
+            activeSelectedDayIndex = 0;
 
-                const startD = parseLocalDate(trip.startDate);
-                currentCalendarDate = new Date(startD.getFullYear(), startD.getMonth(), 1);
-            }
+            const startD = parseLocalDate(trip.startDate);
+            currentCalendarDate = new Date(startD.getFullYear(), startD.getMonth(), 1);
 
             renderActiveTripOverview();
             renderCalendar();
@@ -671,17 +784,7 @@
         function renderActiveTripOverview() {
             const trip = getActiveTrip();
             const container = document.getElementById('tripSummaryCard');
-            if (!container) return;
-
-            if (!trip) {
-                container.innerHTML = `
-                    <div class="text-center py-3 text-xs text-slate-400">
-                        <i class="fa-solid fa-map-location-dot text-lg mb-1 block text-slate-300"></i>
-                        Henüz bir seyahat planı bulunmuyor.<br>Yukarıdaki <b>"Yeni Seyahat"</b> butonuna basarak ilk planınızı oluşturun.
-                    </div>
-                `;
-                return;
-            }
+            if (!trip) return;
 
             const days = getDatesInRange(trip.startDate, trip.endDate);
 
@@ -700,14 +803,15 @@
         }
 
         function deleteCurrentTrip() {
-            if (!activeTripId || trips.length === 0) return;
-
+            if (trips.length <= 1) {
+                showToast("En az bir seyahat bulunmalıdır.", "error");
+                return;
+            }
             trips = trips.filter(t => t.id !== activeTripId);
             window.trips = trips;
-            activeTripId = trips.length > 0 ? trips[0].id : null;
-            selectedCalendarDateStr = trips.length > 0 ? trips[0].startDate : null;
+            activeTripId = trips[0].id;
+            selectedCalendarDateStr = trips[0].startDate;
             activeSelectedDayIndex = 0;
-
             window.refreshAllViews();
             notifyDataChanged();
             showToast("Seyahat silindi.");
@@ -793,23 +897,18 @@
         }
 
         function handleSelectDateFromCalendar(dateStr) {
-            const trip = getActiveTrip();
-            if (!trip) {
-                showToast("Önce bir seyahat oluşturmalısınız.", "error");
-                return;
-            }
-
             selectedCalendarDateStr = dateStr;
+            const trip = getActiveTrip();
+            if (!trip) return;
+            
             const tripDates = getDatesInRange(trip.startDate, trip.endDate);
             const matchIndex = tripDates.indexOf(dateStr);
 
-            // Eğer tıklanan gün zaten seyahat aralığında ise doğrudan o güne git
             if (matchIndex !== -1) {
                 activeSelectedDayIndex = matchIndex;
                 renderCalendar();
                 renderDayTimeline();
             } else {
-                // Seyahat aralığı dışındaysa seyahat süresini genişletmeyi öner
                 pendingCalendarDate = dateStr;
                 const formattedDate = formatDisplayDate(dateStr);
                 const msgEl = document.getElementById('expandModalMessage');
@@ -842,35 +941,24 @@
             renderCalendar();
             renderDayTimeline();
             notifyDataChanged();
-            showToast("Seyahat tarih aralığı güncellendi ve gün plana eklendi!");
+            showToast("Seyahat tarih aralığı güncellendi!");
         }
+
+        // --- Kategori Görünüm Ayarları (Semt Eklendi) ---
+        const categoryConfig = {
+            sightseeing: { name: 'Gezilecek Yer', icon: 'fa-landmark', bg: 'bg-amber-100 text-amber-600' },
+            semt: { name: 'Semt / Bölge Keşfi', icon: 'fa-tree-city', bg: 'bg-teal-100 text-teal-700' },
+            shopping: { name: 'Alışveriş', icon: 'fa-bag-shopping', bg: 'bg-rose-100 text-rose-600' },
+            food: { name: 'Yeme - İçme', icon: 'fa-utensils', bg: 'bg-orange-100 text-orange-600' },
+            transport: { name: 'Ulaşım / Transfer', icon: 'fa-plane-departure', bg: 'bg-blue-100 text-blue-600' },
+            hotel: { name: 'Konaklama', icon: 'fa-hotel', bg: 'bg-purple-100 text-purple-600' },
+            activity: { name: 'Etkinlik / Eğlence', icon: 'fa-ticket', bg: 'bg-emerald-100 text-emerald-600' }
+        };
 
         // --- Günlük Zaman Çizelgesi (İtinerary) ---
         function renderDayTimeline() {
             const trip = getActiveTrip();
-            const pillsContainer = document.getElementById('dayPillsContainer');
-            const timelineList = document.getElementById('timelineList');
-            const emptyDayState = document.getElementById('emptyDayState');
-
-            if (!trip) {
-                pillsContainer.innerHTML = '';
-                timelineList.innerHTML = '';
-                document.getElementById('currentTripDurationBadge').textContent = '0 Gün';
-                document.getElementById('currentDayTitle').innerHTML = 'Henüz Seyahat Yok';
-                emptyDayState.classList.remove('hidden');
-                emptyDayState.classList.add('flex');
-                emptyDayState.querySelector('p.font-medium').textContent = 'Kayıtlı bir seyahat bulunamadı.';
-                emptyDayState.querySelector('p.text-xs').textContent = 'Plan yapmaya başlamak için yukarıdan "Yeni Seyahat" butonuna tıklayın.';
-                emptyDayState.querySelector('button').onclick = openNewTripModal;
-                emptyDayState.querySelector('button').textContent = '+ Yeni Seyahat Başlat';
-                return;
-            }
-
-            // Normal seyahat akışı
-            emptyDayState.querySelector('p.font-medium').textContent = 'Bu gün için henüz bir plan eklenmemiş.';
-            emptyDayState.querySelector('p.text-xs').textContent = 'Müze ziyaretleri, restoran rezervasyonları ya da transfer detaylarını ekleyerek gününüzü organize edin.';
-            emptyDayState.querySelector('button').onclick = openAddPlanModal;
-            emptyDayState.querySelector('button').textContent = '+ İlk Aktiviteyi Ekle';
+            if (!trip) return;
 
             const tripDates = getDatesInRange(trip.startDate, trip.endDate);
             if (tripDates.length === 0) return;
@@ -883,6 +971,7 @@
             selectedCalendarDateStr = currentDayDateStr;
 
             // Gün Hapları Butonları
+            const pillsContainer = document.getElementById('dayPillsContainer');
             pillsContainer.innerHTML = '';
 
             tripDates.forEach((dStr, idx) => {
@@ -916,7 +1005,10 @@
             `;
 
             // Zaman Çizelgesi İçeriği
+            const timelineList = document.getElementById('timelineList');
+            const emptyDayState = document.getElementById('emptyDayState');
             timelineList.innerHTML = '';
+
             const dayPlans = (trip.itineraryDays && trip.itineraryDays[currentDayDateStr]) || [];
 
             if (dayPlans.length === 0) {
@@ -931,34 +1023,36 @@
             timelineList.classList.remove('hidden');
 
             // Saat sırasına göre diz
-            const sortedPlans = [...dayPlans].sort((a, b) => a.time.localeCompare(b.time));
-
-            const categoryIcons = {
-                sightseeing: { icon: 'fa-landmark', bg: 'bg-amber-100 text-amber-600' },
-                shopping: { icon: 'fa-bag-shopping', bg: 'bg-rose-100 text-rose-600' },
-                food: { icon: 'fa-utensils', bg: 'bg-orange-100 text-orange-600' },
-                transport: { icon: 'fa-plane-departure', bg: 'bg-blue-100 text-blue-600' },
-                hotel: { icon: 'fa-hotel', bg: 'bg-purple-100 text-purple-600' },
-                activity: { icon: 'fa-ticket', bg: 'bg-emerald-100 text-emerald-600' }
-            };
+            const sortedPlans = [...dayPlans].sort((a, b) => (a.time || '').localeCompare(b.time || ''));
 
             sortedPlans.forEach((item) => {
-                const cat = categoryIcons[item.category] || categoryIcons.activity;
+                const cat = categoryConfig[item.category] || categoryConfig.activity;
                 const itemDiv = document.createElement('div');
                 itemDiv.className = "relative flex items-start gap-3 group";
 
                 itemDiv.innerHTML = `
-                    <div class="absolute -left-[30px] top-0 w-8 h-8 rounded-full ${cat.bg} border-2 border-white flex items-center justify-center text-xs shadow-sm">
+                    <div class="absolute -left-[30px] top-0 w-8 h-8 rounded-full ${cat.bg} border-2 border-white flex items-center justify-center text-xs shadow-sm" title="${cat.name}">
                         <i class="fa-solid ${cat.icon}"></i>
                     </div>
-                    <div class="bg-slate-50 hover:bg-slate-100/80 border border-slate-200/80 rounded-2xl p-4 flex-1 transition shadow-sm">
+                    <div class="bg-slate-50 hover:bg-slate-100/90 border border-slate-200/80 rounded-2xl p-4 flex-1 transition shadow-sm">
                         <div class="flex items-center justify-between">
-                            <span class="text-xs font-bold text-sky-700 bg-sky-100/60 px-2 py-0.5 rounded-md flex items-center gap-1">
-                                <i class="fa-regular fa-clock text-[10px]"></i> ${item.time}
-                            </span>
-                            <button onclick="deletePlanItem('${currentDayDateStr}', '${item.id}')" class="text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition p-1">
-                                <i class="fa-regular fa-trash-can text-xs"></i>
-                            </button>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-bold text-sky-700 bg-sky-100/70 px-2.5 py-0.5 rounded-md flex items-center gap-1">
+                                    <i class="fa-regular fa-clock text-[10px]"></i> ${item.time || '--:--'}
+                                </span>
+                                <span class="text-[11px] font-medium px-2 py-0.5 rounded-md ${cat.bg}">
+                                    ${cat.name}
+                                </span>
+                            </div>
+                            <!-- Aksiyon Butonları: Düzenle & Sil -->
+                            <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+                                <button onclick="openEditPlanModal('${currentDayDateStr}', '${item.id}')" title="Aktiviteyi Düzenle" class="text-slate-400 hover:text-sky-600 p-1 rounded hover:bg-sky-50 transition">
+                                    <i class="fa-solid fa-pen-to-square text-xs"></i>
+                                </button>
+                                <button onclick="deletePlanItem('${currentDayDateStr}', '${item.id}')" title="Aktiviteyi Sil" class="text-slate-400 hover:text-rose-500 p-1 rounded hover:bg-rose-50 transition">
+                                    <i class="fa-regular fa-trash-can text-xs"></i>
+                                </button>
+                            </div>
                         </div>
                         <h4 class="text-sm font-bold text-slate-800 mt-2">${item.title}</h4>
                         ${item.location ? `
@@ -967,7 +1061,7 @@
                             </p>
                         ` : ''}
                         ${item.notes ? `
-                            <p class="text-xs text-slate-600 bg-white/70 p-2.5 rounded-xl border border-slate-100 mt-2.5">
+                            <p class="text-xs text-slate-600 bg-white/80 p-2.5 rounded-xl border border-slate-100 mt-2.5 whitespace-pre-line">
                                 ${item.notes}
                             </p>
                         ` : ''}
@@ -977,9 +1071,137 @@
             });
         }
 
+        // --- Aktivite Düzenleme İşlemleri ---
+        function openEditPlanModal(dateStr, itemId) {
+            const trip = getActiveTrip();
+            if (!trip || !trip.itineraryDays || !trip.itineraryDays[dateStr]) return;
+
+            const item = trip.itineraryDays[dateStr].find(x => x.id === itemId);
+            if (!item) return;
+
+            document.getElementById('editPlanId').value = item.id;
+            document.getElementById('editPlanDate').value = dateStr;
+            document.getElementById('editPlanTimeInput').value = item.time || '';
+            document.getElementById('editPlanCategoryInput').value = item.category || 'sightseeing';
+            document.getElementById('editPlanTitleInput').value = item.title || '';
+            document.getElementById('editPlanLocationInput').value = item.location || '';
+            document.getElementById('editPlanNotesInput').value = item.notes || '';
+
+            openModal('editPlanModal');
+        }
+
+        function handleUpdatePlan(event) {
+            event.preventDefault();
+            const trip = getActiveTrip();
+            const itemId = document.getElementById('editPlanId').value;
+            const dateStr = document.getElementById('editPlanDate').value;
+
+            if (!trip || !trip.itineraryDays || !trip.itineraryDays[dateStr]) return;
+
+            const itemIndex = trip.itineraryDays[dateStr].findIndex(x => x.id === itemId);
+            if (itemIndex === -1) return;
+
+            trip.itineraryDays[dateStr][itemIndex] = {
+                ...trip.itineraryDays[dateStr][itemIndex],
+                time: document.getElementById('editPlanTimeInput').value,
+                category: document.getElementById('editPlanCategoryInput').value,
+                title: document.getElementById('editPlanTitleInput').value.trim(),
+                location: document.getElementById('editPlanLocationInput').value.trim(),
+                notes: document.getElementById('editPlanNotesInput').value.trim()
+            };
+
+            closeModal('editPlanModal');
+            renderDayTimeline();
+            renderCalendar();
+            notifyDataChanged();
+            showToast("Aktivite başarıyla güncellendi!");
+        }
+
+        // --- Gündeki Tüm Aktiviteleri Başka Güne Taşıma İşlemleri ---
+        function openMoveDayActivitiesModal() {
+            const trip = getActiveTrip();
+            if (!trip) return;
+
+            const tripDates = getDatesInRange(trip.startDate, trip.endDate);
+            const currentDateStr = tripDates[activeSelectedDayIndex] || trip.startDate;
+            const currentPlans = (trip.itineraryDays && trip.itineraryDays[currentDateStr]) || [];
+
+            if (currentPlans.length === 0) {
+                showToast("Bu günde taşınacak aktivite bulunmuyor.", "error");
+                return;
+            }
+
+            document.getElementById('moveSourceDayLabel').textContent = `${activeSelectedDayIndex + 1}. Gün (${formatDisplayDate(currentDateStr)})`;
+
+            const targetSelect = document.getElementById('targetDaySelect');
+            targetSelect.innerHTML = '';
+
+            let hasValidTarget = false;
+            tripDates.forEach((dStr, idx) => {
+                if (dStr !== currentDateStr) {
+                    hasValidTarget = true;
+                    const opt = document.createElement('option');
+                    opt.value = dStr;
+                    opt.textContent = `${idx + 1}. Gün - ${formatDisplayDate(dStr)}`;
+                    targetSelect.appendChild(opt);
+                }
+            });
+
+            if (!hasValidTarget) {
+                showToast("Taşınabilecek başka bir gün yok. Seyahat süresini uzatabilirsiniz.", "error");
+                return;
+            }
+
+            openModal('moveDayModal');
+        }
+
+        function handleMoveDayActivities(event) {
+            event.preventDefault();
+            const trip = getActiveTrip();
+            const tripDates = getDatesInRange(trip.startDate, trip.endDate);
+            const sourceDateStr = tripDates[activeSelectedDayIndex] || trip.startDate;
+            const targetDateStr = document.getElementById('targetDaySelect').value;
+
+            if (!targetDateStr || sourceDateStr === targetDateStr) {
+                showToast("Lütfen farklı bir hedef gün seçin.", "error");
+                return;
+            }
+
+            if (!trip.itineraryDays) trip.itineraryDays = {};
+            const sourcePlans = trip.itineraryDays[sourceDateStr] || [];
+
+            if (sourcePlans.length === 0) {
+                showToast("Taşınacak aktivite bulunamadı.", "error");
+                closeModal('moveDayModal');
+                return;
+            }
+
+            if (!trip.itineraryDays[targetDateStr]) {
+                trip.itineraryDays[targetDateStr] = [];
+            }
+
+            // Aktiviteleri hedef güne ekle ve kaynak günü boşalt
+            trip.itineraryDays[targetDateStr].push(...sourcePlans);
+            trip.itineraryDays[sourceDateStr] = [];
+
+            closeModal('moveDayModal');
+
+            // Hedef güne odaklan
+            const targetIdx = tripDates.indexOf(targetDateStr);
+            if (targetIdx !== -1) {
+                activeSelectedDayIndex = targetIdx;
+                selectedCalendarDateStr = targetDateStr;
+            }
+
+            renderDayTimeline();
+            renderCalendar();
+            notifyDataChanged();
+            showToast(`${sourcePlans.length} aktivite ${formatDisplayDate(targetDateStr)} gününe taşındı!`);
+        }
+
         function deletePlanItem(dateStr, itemId) {
             const trip = getActiveTrip();
-            if (trip && trip.itineraryDays && trip.itineraryDays[dateStr]) {
+            if (trip.itineraryDays && trip.itineraryDays[dateStr]) {
                 trip.itineraryDays[dateStr] = trip.itineraryDays[dateStr].filter(x => x.id !== itemId);
                 renderDayTimeline();
                 renderCalendar();
@@ -994,7 +1216,7 @@
             const container = document.getElementById('placesGrid');
             container.innerHTML = '';
 
-            if (!trip || !trip.places || trip.places.length === 0) {
+            if (!trip.places || trip.places.length === 0) {
                 container.innerHTML = `
                     <div class="col-span-full py-8 text-center text-slate-400 text-xs">
                         <i class="fa-solid fa-map-pin text-2xl mb-2 text-slate-300 block"></i>
@@ -1023,7 +1245,6 @@
 
         function deletePlace(placeId) {
             const trip = getActiveTrip();
-            if (!trip) return;
             trip.places = (trip.places || []).filter(p => p.id !== placeId);
             renderPlaces();
             notifyDataChanged();
@@ -1036,7 +1257,8 @@
             const container = document.getElementById('checklistContainer');
             container.innerHTML = '';
 
-            if (!trip || !trip.checklist || trip.checklist.length === 0) {
+            const list = trip.checklist || [];
+            if (list.length === 0) {
                 container.innerHTML = `
                     <div class="py-8 text-center text-slate-400 text-xs">
                         <i class="fa-solid fa-list-ul text-2xl mb-2 text-slate-300 block"></i>
@@ -1046,7 +1268,7 @@
                 return;
             }
 
-            const list = trip.checklist;
+            // Kategorilere grupla
             const groups = {};
             list.forEach(item => {
                 if (!groups[item.category]) groups[item.category] = [];
@@ -1082,7 +1304,6 @@
 
         function toggleChecklistItem(id) {
             const trip = getActiveTrip();
-            if (!trip) return;
             const item = (trip.checklist || []).find(i => i.id === id);
             if (item) {
                 item.checked = !item.checked;
@@ -1093,7 +1314,6 @@
 
         function deleteChecklistItem(id) {
             const trip = getActiveTrip();
-            if (!trip) return;
             trip.checklist = (trip.checklist || []).filter(i => i.id !== id);
             renderChecklist();
             notifyDataChanged();
@@ -1107,7 +1327,8 @@
             if (!container) return;
             container.innerHTML = '';
 
-            if (!trip || !trip.shoppingList || trip.shoppingList.length === 0) {
+            const list = trip.shoppingList || [];
+            if (list.length === 0) {
                 container.innerHTML = `
                     <div class="py-8 text-center text-slate-400 text-xs">
                         <i class="fa-solid fa-bag-shopping text-2xl mb-2 text-slate-300 block"></i>
@@ -1117,7 +1338,7 @@
                 return;
             }
 
-            const list = trip.shoppingList;
+            // Kategorilere göre grupla
             const groups = {};
             list.forEach(item => {
                 const cat = item.category || 'Genel';
@@ -1155,7 +1376,6 @@
 
         function toggleShoppingItem(id) {
             const trip = getActiveTrip();
-            if (!trip) return;
             const item = (trip.shoppingList || []).find(i => i.id === id);
             if (item) {
                 item.checked = !item.checked;
@@ -1166,7 +1386,6 @@
 
         function deleteShoppingItem(id) {
             const trip = getActiveTrip();
-            if (!trip) return;
             trip.shoppingList = (trip.shoppingList || []).filter(i => i.id !== id);
             renderShoppingList();
             notifyDataChanged();
@@ -1196,7 +1415,7 @@
             });
         }
 
-        // --- Modal İşlemleri ve Form Submit ---
+        // --- Modal Açma/Kapama ---
         function openModal(modalId) {
             document.getElementById(modalId).classList.remove('hidden');
         }
@@ -1206,7 +1425,6 @@
         }
 
         function openNewTripModal() {
-            // Bugün ve 5 gün sonrasını hazır doldur
             const today = new Date();
             const future = new Date();
             future.setDate(today.getDate() + 5);
@@ -1262,11 +1480,6 @@
         }
 
         function openAddPlanModal() {
-            const trip = getActiveTrip();
-            if (!trip) {
-                showToast("Önce bir seyahat oluşturmalısınız.", "error");
-                return;
-            }
             document.getElementById('planTimeInput').value = "10:00";
             openModal('addPlanModal');
         }
@@ -1274,8 +1487,6 @@
         function handleCreatePlan(event) {
             event.preventDefault();
             const trip = getActiveTrip();
-            if (!trip) return;
-
             const tripDates = getDatesInRange(trip.startDate, trip.endDate);
             const currentDateStr = tripDates[activeSelectedDayIndex] || trip.startDate;
 
@@ -1309,19 +1520,12 @@
         }
 
         function openAddShoppingItemModal() {
-            const trip = getActiveTrip();
-            if (!trip) {
-                showToast("Önce bir seyahat oluşturmalısınız.", "error");
-                return;
-            }
             openModal('addShoppingModal');
         }
 
         function handleCreateShoppingItem(event) {
             event.preventDefault();
             const trip = getActiveTrip();
-            if (!trip) return;
-
             const text = document.getElementById('shoppingItemText').value.trim();
             const category = document.getElementById('shoppingCategorySelect').value;
             const target = document.getElementById('shoppingTargetInput').value.trim();
@@ -1345,19 +1549,12 @@
         }
 
         function openAddPlaceModal() {
-            const trip = getActiveTrip();
-            if (!trip) {
-                showToast("Önce bir seyahat oluşturmalısınız.", "error");
-                return;
-            }
             openModal('addPlaceModal');
         }
 
         function handleCreatePlace(event) {
             event.preventDefault();
             const trip = getActiveTrip();
-            if (!trip) return;
-
             const name = document.getElementById('placeNameInput').value.trim();
             const location = document.getElementById('placeLocationInput').value.trim();
             const note = document.getElementById('placeNoteInput').value.trim();
@@ -1381,19 +1578,12 @@
         }
 
         function openAddChecklistItemModal() {
-            const trip = getActiveTrip();
-            if (!trip) {
-                showToast("Önce bir seyahat oluşturmalısınız.", "error");
-                return;
-            }
             openModal('addChecklistModal');
         }
 
         function handleCreateChecklistItem(event) {
             event.preventDefault();
             const trip = getActiveTrip();
-            if (!trip) return;
-
             const text = document.getElementById('checklistItemText').value.trim();
             const category = document.getElementById('checklistCategorySelect').value;
 

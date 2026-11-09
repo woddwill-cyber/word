@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CineLog - Watchlist</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0b0f19; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #334155; }
+    
+    .preview-card {
+      filter: drop-shadow(0 15px 25px rgba(0, 0, 0, 0.75));
+    }
+  </style>
+</head>
+<body class="bg-[#0b0f19] text-slate-100 min-h-screen font-sans antialiased selection:bg-purple-600 selection:text-white flex flex-col justify-between text-xs sm:text-sm">
+
+  <!-- Header -->
+  <header class="sticky top-0 z-30 bg-[#0f172a]/95 backdrop-blur-md border-b border-slate-800/80">
+    <div class="max-w-5xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-pink-500 flex items-center justify-center shadow-md shadow-purple-500/20">
+          <i class="fa-solid fa-play text-white text-xs sm:text-sm ml-0.5"></i>
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-purple-400 bg-clip-text text-transparent leading-none">
+            CineLog
+          </h1>
+          <div class="flex items-center gap-1 text-[10px] text-slate-400 font-medium mt-0.5">
+            <span>Watchlist</span>
+            <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" title="Canlı Bağlantı"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button onclick="openModal()" class="px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold text-xs shadow-md shadow-purple-600/20 transition flex items-center gap-1.5 active:scale-95">
+          <i class="fa-solid fa-plus text-[11px]"></i>
+          <span>Yeni Ekle</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Ana İçerik -->
+  <main class="max-w-5xl mx-auto px-3 sm:px-6 pt-5 w-full flex-1">
+
+    <!-- Filtreler & Arama -->
+    <div class="flex flex-col sm:flex-row gap-2.5 justify-between items-stretch sm:items-center mb-5">
+      <!-- Kategori Sekmeleri -->
+      <div class="flex items-center gap-1 overflow-x-auto pb-1.5 sm:pb-0 scrollbar-none" id="category-tabs">
+        <button onclick="setCategoryFilter('all')" class="cat-tab px-3 py-1.5 rounded-lg text-xs font-semibold transition whitespace-nowrap bg-purple-600 text-white" data-cat="all">Tümü</button>
+        <button onclick="setCategoryFilter('anime')" class="cat-tab px-3 py-1.5 rounded-lg text-xs font-semibold transition whitespace-nowrap bg-slate-900/90 text-slate-400 hover:text-white" data-cat="anime">Anime</button>
+        <button onclick="setCategoryFilter('film')" class="cat-tab px-3 py-1.5 rounded-lg text-xs font-semibold transition whitespace-nowrap bg-slate-900/90 text-slate-400 hover:text-white" data-cat="film">Filmler</button>
+        <button onclick="setCategoryFilter('dizi')" class="cat-tab px-3 py-1.5 rounded-lg text-xs font-semibold transition whitespace-nowrap bg-slate-900/90 text-slate-400 hover:text-white" data-cat="dizi">Dizi</button>
+        <button onclick="setCategoryFilter('kitap')" class="cat-tab px-3 py-1.5 rounded-lg text-xs font-semibold transition whitespace-nowrap bg-slate-900/90 text-slate-400 hover:text-white" data-cat="kitap">Manga / Webtoon</button>
+        <button onclick="setCategoryFilter('oyun')" class="cat-tab px-3 py-1.5 rounded-lg text-xs font-semibold transition whitespace-nowrap bg-slate-900/90 text-slate-400 hover:text-white" data-cat="oyun">Oyun</button>
+        <button onclick="setCategoryFilter('seri')" class="cat-tab px-3 py-1.5 rounded-lg text-xs font-semibold transition whitespace-nowrap bg-slate-900/90 text-slate-400 hover:text-white" data-cat="seri">Seri</button>
+      </div>
+
+      <!-- Durum Seçimi ve Arama -->
+      <div class="flex items-center gap-2">
+        <div class="relative w-40 sm:w-44 flex-shrink-0">
+          <select id="statusFilter" onchange="renderList()" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-purple-500 appearance-none cursor-pointer">
+            <option value="all">Tüm Durumlar</option>
+            <option value="watching">Devam Edenler</option>
+            <option value="plan">Planlananlar</option>
+            <option value="completed">Bitenler</option>
+            <option value="dropped">Bırakılanlar</option>
+          </select>
+          <i class="fa-solid fa-chevron-down absolute right-2.5 top-2.5 text-[10px] text-slate-500 pointer-events-none"></i>
+        </div>
+
+        <div class="relative w-full sm:w-48">
+          <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2 text-[11px] text-slate-500"></i>
+          <input type="text" id="searchInput" oninput="renderList()" placeholder="Ara..." class="w-full bg-slate-900 border border-slate-800 rounded-lg pl-7 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-purple-500">
+        </div>
+      </div>
+    </div>
+
+    <!-- Yükleniyor Göstergesi -->
+    <div id="loadingIndicator" class="text-center py-16 text-slate-500 flex flex-col items-center justify-center gap-2">
+      <i class="fa-solid fa-circle-notch fa-spin text-2xl text-purple-500"></i>
+      <span class="text-xs font-medium">Veriler yükleniyor...</span>
+    </div>
+
+    <!-- Kategori Bölümleri Kapsayıcısı -->
+    <div id="sectionsContainer" class="space-y-4"></div>
+
+    <!-- Boş Durum -->
+    <div id="emptyState" class="hidden text-center py-14 bg-slate-900/30 rounded-2xl border border-dashed border-slate-800/80 my-4">
+      <div class="w-12 h-12 rounded-full bg-slate-800/70 text-slate-500 flex items-center justify-center text-lg mx-auto mb-2">
+        <i class="fa-regular fa-folder-open"></i>
+      </div>
+      <h3 class="text-sm font-semibold text-slate-300">İçerik Bulunamadı</h3>
+      <p class="text-[11px] text-slate-500 max-w-xs mx-auto mt-0.5 mb-3">Bu filtreye uygun kayıt yok veya bitenleri görmek için durum filtresini "Bitenler" yapabilirsiniz.</p>
+      <button onclick="openModal()" class="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-medium text-xs transition">
+        <i class="fa-solid fa-plus mr-1"></i> Yeni İçerik Ekle
+      </button>
+    </div>
+  </main>
+
+  <!-- Alt Bilgi Şeridi -->
+  <footer class="mt-10 border-t border-slate-800/80 bg-slate-950/80 backdrop-blur-md py-3">
+    <div class="max-w-5xl mx-auto px-3 sm:px-6 flex flex-wrap items-center justify-center sm:justify-between gap-3 text-[11px] text-slate-400">
+      <div class="flex items-center gap-2">
+        <span class="font-bold text-slate-300">CineLog</span>
+        <span class="text-slate-600">•</span>
+        <span>Takip Listesi</span>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-center gap-3 sm:gap-5 font-medium">
+        <div class="flex items-center gap-1">
+          <i class="fa-solid fa-layer-group text-purple-400 text-[10px]"></i>
+          <span>Toplam:</span>
+          <span id="footer-stat-total" class="font-bold text-slate-200">0</span>
+        </div>
+        <span class="text-slate-700 hidden sm:inline">•</span>
+        <div class="flex items-center gap-1">
+          <i class="fa-solid fa-hourglass-half text-blue-400 text-[10px]"></i>
+          <span>Devam Eden:</span>
+          <span id="footer-stat-watching" class="font-bold text-slate-200">0</span>
+        </div>
+        <span class="text-slate-700 hidden sm:inline">•</span>
+        <div class="flex items-center gap-1">
+          <i class="fa-solid fa-circle-check text-emerald-400 text-[10px]"></i>
+          <span>Tamamlanan:</span>
+          <span id="footer-stat-completed" class="font-bold text-slate-200">0</span>
+        </div>
+        <span class="text-slate-700 hidden sm:inline">•</span>
+        <div class="flex items-center gap-1">
+          <i class="fa-solid fa-star text-amber-400 text-[10px]"></i>
+          <span>Ort. Puan:</span>
+          <span id="footer-stat-rating" class="font-bold text-slate-200">0.0</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Modal: Ekleme & Düzenleme -->
+  <div id="itemModal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden flex items-center justify-center p-3 overflow-y-auto">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl my-6 transition-all scale-95 opacity-0 duration-200" id="modalCard">
+      <div class="px-5 py-3.5 border-b border-slate-800 flex items-center justify-between">
+        <h3 id="modalTitle" class="text-sm font-bold text-white">Yeni İçerik Ekle</h3>
+        <button onclick="closeModal()" class="w-7 h-7 rounded-lg bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark text-xs"></i>
+        </button>
+      </div>
+
+      <form id="itemForm" onsubmit="handleFormSubmit(event)" class="p-5 space-y-3">
+        <input type="hidden" id="itemId">
+
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-300 mb-1">Başlık *</label>
+          <input type="text" id="inputTitle" required placeholder="Örn: John Wick 1, Dune: Part Two..." class="w-full bg-slate-800/80 border border-slate-700/80 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-300 mb-1">Kategori</label>
+            <select id="inputCategory" onchange="toggleSeriesFields()" class="w-full bg-slate-800/80 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-purple-500">
+              <option value="anime">Anime Serileri</option>
+              <option value="film">Filmler</option>
+              <option value="dizi">Dizi</option>
+              <option value="kitap">Manga / Webtoon</option>
+              <option value="oyun">Oyun</option>
+              <option value="seri">Seri</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-300 mb-1">Durum</label>
+            <select id="inputStatus" class="w-full bg-slate-800/80 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-purple-500">
+              <option value="watching">Devam Ediyor</option>
+              <option value="plan">Planlandı</option>
+              <option value="completed">Tamamlandı</option>
+              <option value="dropped">Bırakıldı</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Seri Özel Alanları (Sadece 'seri' seçilince veya istenirse açılır) -->
+        <div id="seriesFieldsRow" class="grid grid-cols-3 gap-2 bg-purple-950/20 p-2.5 rounded-xl border border-purple-500/20">
+          <div class="col-span-2">
+            <label class="block text-[10px] font-bold text-purple-300 mb-1">Seri / Evren Adı</label>
+            <input type="text" id="inputSeriesGroup" placeholder="Örn: John Wick, Harry Potter" class="w-full bg-slate-800/90 border border-slate-700 rounded-lg px-2 py-1 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-400">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-purple-300 mb-1">Sıra No</label>
+            <input type="number" id="inputSeriesOrder" min="1" step="1" placeholder="1, 2..." class="w-full bg-slate-800/90 border border-slate-700 rounded-lg px-2 py-1 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-400">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-300 mb-1">İlerleme / Bölüm</label>
+            <input type="text" id="inputProgress" placeholder="Örn: Film 1, 1080p, İzlenecek" class="w-full bg-slate-800/80 border border-slate-700/80 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-500">
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-300 mb-1">Puan (1 - 10)</label>
+            <input type="number" id="inputRating" min="1" max="10" step="0.5" placeholder="Örn: 8.5" class="w-full bg-slate-800/80 border border-slate-700/80 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-300 mb-1">Afiş Görsel URL (Büyütme için)</label>
+          <input type="url" id="inputPoster" placeholder="https://..." class="w-full bg-slate-800/80 border border-slate-700/80 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-500">
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-300 mb-1">Kişisel Not / Link</label>
+          <textarea id="inputNotes" rows="2" placeholder="Notlar veya linkler..." class="w-full bg-slate-800/80 border border-slate-700/80 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 resize-none"></textarea>
+        </div>
+
+        <div class="pt-1.5 flex items-center justify-end gap-2">
+          <button type="button" onclick="closeModal()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition">Vazgeç</button>
+          <button type="submit" id="saveBtn" class="px-4 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold shadow-md shadow-purple-600/30 transition">Kaydet</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Bitir ve Puanla -->
+  <div id="finishModal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden flex items-center justify-center p-3">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl p-5 transition-all scale-95 opacity-0 duration-200" id="finishModalCard">
+      <div class="text-center mb-4">
+        <div class="w-11 h-11 bg-emerald-500/10 text-emerald-400 rounded-xl flex items-center justify-center text-xl mx-auto mb-2">
+          <i class="fa-solid fa-trophy"></i>
+        </div>
+        <h3 class="text-sm font-bold text-white">Tebrikler, Bitirdin!</h3>
+        <p id="finishItemTitle" class="text-xs font-semibold text-purple-400 truncate mt-0.5"></p>
+      </div>
+
+      <input type="hidden" id="finishItemId">
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-300 mb-1">Puanın (1 - 10)</label>
+          <div class="relative">
+            <input type="number" id="finishRating" min="1" max="10" step="0.5" placeholder="Örn: 9.0" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500">
+            <i class="fa-solid fa-star absolute right-3 top-2 text-amber-400 text-xs"></i>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-300 mb-1">Son Yorumun (Opsiyonel)</label>
+          <textarea id="finishNotes" rows="2" placeholder="Son değerlendirmen..." class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500 resize-none"></textarea>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-1">
+          <button type="button" onclick="closeFinishModal()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition">İptal</button>
+          <button type="button" onclick="confirmFinish()" id="finishSubmitBtn" class="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-md shadow-emerald-600/30 transition">Bitir ve Kaydet</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Bildirimi -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 bg-slate-800 border border-slate-700 text-white px-3.5 py-2.5 rounded-xl shadow-xl flex items-center gap-2.5 transition-all duration-300 translate-y-16 opacity-0 pointer-events-none text-xs">
+    <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400"></i>
+    <span id="toastMessage" class="font-medium">İşlem başarılı.</span>
+  </div>
+
+  <!-- FIREBASE VE VERİTABANI İŞLEMLERİ -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { 
+      getFirestore, 
+      collection, 
+      addDoc, 
+      doc, 
+      updateDoc, 
+      deleteDoc, 
+      onSnapshot, 
+      serverTimestamp 
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyA2i1gVxTXqKsXfkOEFmmg-FlwXFjJPe0g",
+      authDomain: "my-watchlist-b9a69.firebaseapp.com",
+      projectId: "my-watchlist-b9a69",
+      storageBucket: "my-watchlist-b9a69.firebasestorage.app",
+      messagingSenderId: "949265656805",
+      appId: "1:949265656805:web:0adbf66c3eb46c15291d0c"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const watchlistCol = collection(db, "watchlist");
+
+    window.watchlist = [];
+    window.currentCategoryFilter = 'all';
+
+    onSnapshot(watchlistCol, (snapshot) => {
+      const loader = document.getElementById('loadingIndicator');
+      if (loader) loader.classList.add('hidden');
+      
+      window.watchlist = snapshot.docs.map(doc => {
+        const d = doc.data();
+        // Geçmişteki 'diger' kayıtlarını otomatik 'seri' kategorisi olarak değerlendirelim
+        const category = d.category === 'diger' ? 'seri' : d.category;
+        return {
+          id: doc.id,
+          ...d,
+          category
+        };
+      });
+      renderList();
+      updateStats();
+    }, (error) => {
+      console.error("Firestore Hatası:", error);
+      const loader = document.getElementById('loadingIndicator');
+      if (loader) {
+        loader.innerHTML = `
+          <i class="fa-solid fa-triangle-exclamation text-rose-500 text-xl"></i>
+          <span class="text-xs text-rose-400">Bağlantı hatası oluştu.</span>
+        `;
+      }
+      showToast("Veritabanı bağlantı hatası!", false);
+    });
+
+    window.handleFormSubmit = async function(e) {
+      e.preventDefault();
+      const saveBtn = document.getElementById('saveBtn');
+      saveBtn.disabled = true;
+      saveBtn.innerText = "Kaydediliyor...";
+
+      const id = document.getElementById('itemId').value;
+      const title = document.getElementById('inputTitle').value.trim();
+      const category = document.getElementById('inputCategory').value;
+      const status = document.getElementById('inputStatus').value;
+      const progress = document.getElementById('inputProgress').value.trim();
+      const rating = document.getElementById('inputRating').value ? parseFloat(document.getElementById('inputRating').value) : null;
+      const poster = document.getElementById('inputPoster').value.trim();
+      const notes = document.getElementById('inputNotes').value.trim();
+      
+      // Seri alanları
+      const seriesGroup = document.getElementById('inputSeriesGroup').value.trim();
+      const seriesOrderVal = document.getElementById('inputSeriesOrder').value;
+      const seriesOrder = seriesOrderVal ? parseInt(seriesOrderVal, 10) : null;
+
+      try {
+        const payload = {
+          title, category, status, progress, rating, poster, notes,
+          seriesGroup, seriesOrder
+        };
+
+        if (id) {
+          const docRef = doc(db, "watchlist", id);
+          await updateDoc(docRef, { ...payload, updatedAt: serverTimestamp() });
+          showToast('Kayıt güncellendi.');
+        } else {
+          await addDoc(watchlistCol, { ...payload, createdAt: serverTimestamp() });
+          showToast('Yeni içerik eklendi.');
+        }
+        closeModal();
+      } catch (err) {
+        console.error("Kayıt hatası:", err);
+        showToast("Hata: Kaydedilemedi!", false);
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerText = "Kaydet";
+      }
+    };
+
+    window.deleteItem = async function(id) {
+      if (!confirm("Bu içeriği silmek istediğinize emin misiniz?")) return;
+      try {
+        await deleteDoc(doc(db, "watchlist", id));
+        showToast('İçerik silindi.');
+      } catch (err) {
+        console.error("Silme hatası:", err);
+        showToast("Hata: Silinemedi!", false);
+      }
+    };
+
+    window.handleStatusAction = async function(id) {
+      const item = window.watchlist.find(i => i.id === id);
+      if (!item) return;
+
+      if (item.status === 'completed') {
+        try {
+          await updateDoc(doc(db, "watchlist", id), { status: 'watching' });
+          showToast('Eser "Devam Ediyor" listesine alındı.');
+        } catch (e) {
+          showToast("Hata oluştu!", false);
+        }
+      } else {
+        openFinishModal(item);
+      }
+    };
+
+    window.confirmFinish = async function() {
+      const finishBtn = document.getElementById('finishSubmitBtn');
+      finishBtn.disabled = true;
+      finishBtn.innerText = "Kaydediliyor...";
+
+      const id = document.getElementById('finishItemId').value;
+      const ratingVal = document.getElementById('finishRating').value;
+      const notesVal = document.getElementById('finishNotes').value.trim();
+
+      try {
+        const updateData = { status: 'completed' };
+        if (ratingVal) updateData.rating = parseFloat(ratingVal);
+        if (notesVal) updateData.notes = notesVal;
+
+        await updateDoc(doc(db, "watchlist", id), updateData);
+        closeFinishModal();
+        showToast('Tebrikler, bitirildi!');
+      } catch (e) {
+        console.error("Bitirme hatası:", e);
+        showToast("Hata: Güncellenemedi!", false);
+      } finally {
+        finishBtn.disabled = false;
+        finishBtn.innerText = "Bitir ve Kaydet";
+      }
+    };
+  </script>
+
+  <!-- Arayüz & Görünüm Mantığı -->
+  <script>
+    const categoryConfigs = [
+      { id: 'anime', label: 'Anime Serileri', icon: 'fa-bolt', color: 'text-yellow-400' },
+      { id: 'film', label: 'Filmler', icon: 'fa-film', color: 'text-rose-400' },
+      { id: 'dizi', label: 'Dizi', icon: 'fa-tv', color: 'text-indigo-400' },
+      { id: 'kitap', label: 'Manga / Webtoon', icon: 'fa-book-open', color: 'text-emerald-400' },
+      { id: 'oyun', label: 'Oyun', icon: 'fa-gamepad', color: 'text-cyan-400' },
+      { id: 'seri', label: 'Seri Filmler', icon: 'fa-layer-group', color: 'text-purple-400' }
+    ];
+
+    const statusBadge = {
+      watching: { text: 'Devam Ediyor', cls: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
+      plan: { text: 'Planlandı', cls: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
+      completed: { text: 'Bitti', cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
+      dropped: { text: 'Bırakıldı', cls: 'bg-rose-500/10 text-rose-400 border-rose-500/20' }
+    };
+
+    const statusPriority = {
+      watching: 1,
+      dropped: 2,
+      plan: 3,
+      completed: 4
+    };
+
+    function toggleSeriesFields() {
+      const cat = document.getElementById('inputCategory').value;
+      const row = document.getElementById('seriesFieldsRow');
+      if (cat === 'seri') {
+        row.classList.remove('hidden');
+      } else {
+        row.classList.add('hidden');
+      }
+    }
+
+    function setCategoryFilter(category) {
+      window.currentCategoryFilter = category;
+      document.querySelectorAll('.cat-tab').forEach(btn => {
+        if (btn.dataset.cat === category) {
+          btn.className = 'cat-tab px-3 py-1.5 rounded-lg text-xs font-semibold transition whitespace-nowrap bg-purple-600 text-white';
+        } else {
+          btn.className = 'cat-tab px-3 py-1.5 rounded-lg text-xs font-semibold transition whitespace-nowrap bg-slate-900/90 text-slate-400 hover:text-white';
+        }
+      });
+      renderList();
+    }
+
+    function renderList() {
+      const query = document.getElementById('searchInput').value.trim().toLowerCase();
+      const statusFilter = document.getElementById('statusFilter').value;
+      const container = document.getElementById('sectionsContainer');
+      const emptyState = document.getElementById('emptyState');
+
+      const data = window.watchlist || [];
+
+      // Filtreleme: "all" iken bitenleri gösterme
+      let filtered = data.filter(item => {
+        let matchesStatus = false;
+        if (statusFilter === 'all') {
+          matchesStatus = item.status !== 'completed';
+        } else {
+          matchesStatus = item.status === statusFilter;
+        }
+
+        const matchesQuery = (item.title && item.title.toLowerCase().includes(query)) || 
+                             (item.notes && item.notes.toLowerCase().includes(query)) ||
+                             (item.seriesGroup && item.seriesGroup.toLowerCase().includes(query)) ||
+                             (item.progress && item.progress.toLowerCase().includes(query));
+
+        return matchesStatus && matchesQuery;
+      });
+
+      const activeCat = window.currentCategoryFilter;
+      let categoriesToDisplay = categoryConfigs;
+      if (activeCat !== 'all') {
+        categoriesToDisplay = categoryConfigs.filter(c => c.id === activeCat);
+      }
+
+      let totalVisible = 0;
+      let html = '';
+
+      categoriesToDisplay.forEach(cat => {
+        const catItems = filtered.filter(item => item.category === cat.id);
+        if (catItems.length === 0 && activeCat === 'all') return;
+
+        totalVisible += catItems.length;
+
+        // EĞER KATEGORİ 'SERİ' İSE GRUPLU VE SIRALI LİSTELE
+        let bodyContent = '';
+        if (cat.id === 'seri') {
+          bodyContent = renderSeriesSection(catItems);
+        } else {
+          // Normal kategorilerde devam edenler en üstte, planlananlar altta
+          catItems.sort((a, b) => {
+            const pA = statusPriority[a.status] || 99;
+            const pB = statusPriority[b.status] || 99;
+            if (pA !== pB) return pA - pB;
+            return (a.title || '').localeCompare(b.title || '');
+          });
+
+          bodyContent = `
+            <ul class="divide-y divide-slate-800/40">
+              ${catItems.map(item => renderListItem(item)).join('')}
+            </ul>
+          `;
+        }
+
+        html += `
+          <div class="bg-slate-900/50 border border-slate-800/80 rounded-xl p-3 sm:p-4">
+            <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-800/60">
+              <div class="flex items-center gap-2">
+                <i class="fa-solid ${cat.icon} ${cat.color} text-xs sm:text-sm"></i>
+                <h2 class="text-xs sm:text-sm font-bold text-white tracking-wide">${cat.label}</h2>
+                <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-800 text-slate-400 font-semibold">
+                  ${catItems.length}
+                </span>
+              </div>
+              <button onclick="openModalWithCat('${cat.id}')" class="text-[11px] text-purple-400 hover:text-purple-300 transition flex items-center gap-1 font-medium">
+                <i class="fa-solid fa-plus text-[9px]"></i> Ekle
+              </button>
+            </div>
+
+            ${catItems.length === 0 ? `
+              <p class="text-[11px] text-slate-500 py-1.5 italic">Bu kategoride gösterilecek içerik yok.</p>
+            ` : bodyContent}
+          </div>
+        `;
+      });
+
+      if (totalVisible === 0) {
+        container.innerHTML = '';
+        emptyState.classList.remove('hidden');
+      } else {
+        emptyState.classList.add('hidden');
+        container.innerHTML = html;
+      }
+    }
+
+    // Seri Filmleri alt grup başlıklarına göre bir arada ve sıra no'ya göre toplayan fonksiyon
+    function renderSeriesSection(items) {
+      // 1. Serilere göre grupla (Örn: John Wick serisi, Harry Potter serisi)
+      const groups = {};
+      items.forEach(item => {
+        const groupName = item.seriesGroup && item.seriesGroup.trim() !== '' ? item.seriesGroup.trim() : 'Genel Seri / Tekil';
+        if (!groups[groupName]) groups[groupName] = [];
+        groups[groupName].push(item);
+      });
+
+      // 2. Her grup içinde filmleri sıra numarasına (1, 2, 3...) göre diz
+      let groupHtml = '<div class="space-y-3 pt-1">';
+      Object.keys(groups).sort().forEach(groupName => {
+        const groupItems = groups[groupName];
+        groupItems.sort((a, b) => {
+          const ordA = a.seriesOrder !== undefined && a.seriesOrder !== null && a.seriesOrder !== '' ? Number(a.seriesOrder) : 999;
+          const ordB = b.seriesOrder !== undefined && b.seriesOrder !== null && b.seriesOrder !== '' ? Number(b.seriesOrder) : 999;
+          if (ordA !== ordB) return ordA - ordB;
+          return (a.title || '').localeCompare(b.title || '');
+        });
+
+        groupHtml += `
+          <div class="bg-slate-950/40 border border-slate-800/60 rounded-lg p-2.5">
+            <div class="flex items-center justify-between pb-1.5 mb-1.5 border-b border-slate-800/40">
+              <div class="flex items-center gap-1.5">
+                <i class="fa-solid fa-folder-tree text-purple-400 text-[10px]"></i>
+                <span class="text-xs font-bold text-slate-200 tracking-wide">${escapeHtml(groupName)}</span>
+              </div>
+              <span class="text-[10px] text-slate-400">${groupItems.length} Film</span>
+            </div>
+            <ul class="divide-y divide-slate-800/30">
+              ${groupItems.map(item => renderListItem(item, true)).join('')}
+            </ul>
+          </div>
+        `;
+      });
+      groupHtml += '</div>';
+      return groupHtml;
+    }
+
+    function renderListItem(item, isSeriesItem = false) {
+      const isDone = item.status === 'completed';
+      const st = statusBadge[item.status] || statusBadge.watching;
+      const posterUrl = item.poster && item.poster.trim() !== '' 
+        ? item.poster 
+        : `https://placehold.co/400x560/1e293b/94a3b8?text=${encodeURIComponent((item.title || 'İçerik').substring(0, 15))}`;
+
+      return `
+        <li class="relative group flex items-center justify-between py-1.5 px-1.5 rounded-lg hover:bg-slate-800/40 transition-colors">
+          <div class="flex items-center gap-2.5 min-w-0 pr-3">
+            <!-- Seri Sıra Numarası Rozeti veya Liste Noktası -->
+            ${isSeriesItem && item.seriesOrder ? `
+              <span class="w-5 h-5 rounded-md bg-purple-500/20 border border-purple-500/30 text-purple-300 font-bold text-[10px] flex items-center justify-center flex-shrink-0">
+                #${item.seriesOrder}
+              </span>
+            ` : `
+              <span class="w-1.5 h-1.5 rounded-full ${item.status === 'watching' ? 'bg-blue-400' : (item.status === 'plan' ? 'bg-amber-400' : 'bg-slate-500')} flex-shrink-0"></span>
+            `}
+
+            <!-- Küçük Kapak & Büyüyen Önizleme -->
+            <div class="relative flex-shrink-0 group/img">
+              <img src="${posterUrl}" 
+                   alt="${escapeHtml(item.title)}" 
+                   onerror="this.src='https://placehold.co/400x560/1e293b/94a3b8?text=Görsel+Yok'"
+                   class="w-8 h-11 object-cover rounded border border-slate-700/60 cursor-pointer shadow-sm">
+
+              <div class="preview-card absolute left-11 top-1/2 -translate-y-1/2 z-50 pointer-events-none opacity-0 invisible group-hover/img:opacity-100 group-hover/img:visible transition-all duration-200 w-44 bg-slate-900 border border-slate-700 rounded-xl overflow-hidden shadow-2xl">
+                <div class="relative w-full aspect-[2/3] bg-slate-950 overflow-hidden">
+                  <img src="${posterUrl}" alt="${escapeHtml(item.title)}" class="w-full h-full object-cover">
+                  ${item.rating ? `
+                    <div class="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-black/75 text-amber-400 border border-amber-400/30 backdrop-blur-sm flex items-center gap-1">
+                      <i class="fa-solid fa-star text-[9px]"></i> ${item.rating}
+                    </div>
+                  ` : ''}
+                </div>
+                <div class="p-2 bg-slate-900">
+                  <div class="text-[11px] font-bold text-white line-clamp-1">${escapeHtml(item.title)}</div>
+                  ${item.seriesGroup ? `<div class="text-[10px] text-purple-300 font-semibold">${escapeHtml(item.seriesGroup)} ${item.seriesOrder ? '#' + item.seriesOrder : ''}</div>` : ''}
+                  ${item.progress ? `<div class="text-[10px] text-slate-300 font-medium mt-0.5">${escapeHtml(item.progress)}</div>` : ''}
+                  ${item.notes ? `<div class="text-[10px] text-slate-400 italic line-clamp-2 mt-0.5">"${escapeHtml(item.notes)}"</div>` : ''}
+                </div>
+              </div>
+            </div>
+
+            <div class="min-w-0">
+              <div class="flex items-baseline gap-1.5 flex-wrap">
+                <span class="text-xs sm:text-[13px] font-semibold ${isDone ? 'line-through text-slate-400' : 'text-slate-100'} group-hover:text-purple-300 transition truncate max-w-[200px] sm:max-w-md">
+                  ${escapeHtml(item.title)}
+                </span>
+                ${item.progress ? `
+                  <span class="text-[10px] sm:text-[11px] font-medium text-slate-400 bg-slate-800/80 px-1.5 py-0.5 rounded">
+                    ${escapeHtml(item.progress)}
+                  </span>
+                ` : ''}
+              </div>
+
+              ${item.notes ? `
+                <p class="text-[10px] text-slate-400 italic truncate max-w-xs sm:max-w-md mt-0.5">
+                  ${escapeHtml(item.notes)}
+                </p>
+              ` : ''}
+            </div>
+          </div>
+
+          <div class="flex items-center gap-1.5 sm:gap-2.5 flex-shrink-0">
+            ${item.rating ? `
+              <div class="hidden sm:flex items-center gap-1 text-[10px] font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-1.5 py-0.5 rounded">
+                <i class="fa-solid fa-star text-[9px]"></i>
+                <span>${item.rating}</span>
+              </div>
+            ` : ''}
+
+            <span class="text-[9px] sm:text-[10px] font-medium px-1.5 py-0.5 rounded border ${st.cls}">
+              ${st.text}
+            </span>
+
+            <div class="flex items-center gap-1">
+              <button onclick="handleStatusAction('${item.id}')" title="${isDone ? 'Devam Ediyor Yap' : 'Bitir ve Puanla'}" class="w-6 h-6 rounded bg-slate-800 hover:bg-emerald-500/20 text-slate-400 hover:text-emerald-400 transition flex items-center justify-center text-[10px]">
+                <i class="fa-${isDone ? 'solid' : 'regular'} fa-circle-check ${isDone ? 'text-emerald-400' : ''}"></i>
+              </button>
+              <button onclick="openModal('${item.id}')" title="Düzenle" class="w-6 h-6 rounded bg-slate-800 hover:bg-purple-500/20 text-slate-400 hover:text-purple-400 transition flex items-center justify-center text-[10px]">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </button>
+              <button onclick="deleteItem('${item.id}')" title="Sil" class="w-6 h-6 rounded bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition flex items-center justify-center text-[10px]">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </div>
+          </div>
+        </li>
+      `;
+    }
+
+    function updateStats() {
+      const data = window.watchlist || [];
+      const total = data.length;
+      const completed = data.filter(i => i.status === 'completed').length;
+      const watching = data.filter(i => i.status === 'watching').length;
+      
+      const ratedItems = data.filter(i => i.rating && Number(i.rating) > 0);
+      const avg = ratedItems.length > 0 
+        ? (ratedItems.reduce((acc, curr) => acc + Number(curr.rating), 0) / ratedItems.length).toFixed(1)
+        : '0.0';
+
+      const fTotal = document.getElementById('footer-stat-total');
+      const fCompleted = document.getElementById('footer-stat-completed');
+      const fWatching = document.getElementById('footer-stat-watching');
+      const fRating = document.getElementById('footer-stat-rating');
+
+      if (fTotal) fTotal.innerText = total;
+      if (fCompleted) fCompleted.innerText = completed;
+      if (fWatching) fWatching.innerText = watching;
+      if (fRating) fRating.innerText = avg;
+    }
+
+    function openModalWithCat(cat) {
+      openModal();
+      document.getElementById('inputCategory').value = cat;
+      toggleSeriesFields();
+    }
+
+    function openModal(id = null) {
+      const modal = document.getElementById('itemModal');
+      const card = document.getElementById('modalCard');
+      const form = document.getElementById('itemForm');
+      const modalTitle = document.getElementById('modalTitle');
+
+      form.reset();
+      document.getElementById('itemId').value = '';
+
+      if (id) {
+        const item = window.watchlist.find(i => i.id === id);
+        if (item) {
+          modalTitle.innerText = 'İçeriği Düzenle';
+          document.getElementById('itemId').value = item.id;
+          document.getElementById('inputTitle').value = item.title || '';
+          document.getElementById('inputCategory').value = item.category || 'seri';
+          document.getElementById('inputStatus').value = item.status || 'watching';
+          document.getElementById('inputProgress').value = item.progress || '';
+          document.getElementById('inputRating').value = item.rating || '';
+          document.getElementById('inputPoster').value = item.poster || '';
+          document.getElementById('inputNotes').value = item.notes || '';
+          document.getElementById('inputSeriesGroup').value = item.seriesGroup || '';
+          document.getElementById('inputSeriesOrder').value = item.seriesOrder || '';
+        }
+      } else {
+        modalTitle.innerText = 'Yeni İçerik Ekle';
+      }
+
+      toggleSeriesFields();
+
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        card.classList.remove('scale-95', 'opacity-0');
+        card.classList.add('scale-100', 'opacity-100');
+      }, 10);
+    }
+
+    function closeModal() {
+      const modal = document.getElementById('itemModal');
+      const card = document.getElementById('modalCard');
+      card.classList.remove('scale-100', 'opacity-100');
+      card.classList.add('scale-95', 'opacity-0');
+      setTimeout(() => {
+        modal.classList.add('hidden');
+      }, 200);
+    }
+
+    function openFinishModal(item) {
+      document.getElementById('finishItemId').value = item.id;
+      document.getElementById('finishItemTitle').innerText = item.title;
+      document.getElementById('finishRating').value = item.rating || '';
+      document.getElementById('finishNotes').value = item.notes || '';
+
+      const modal = document.getElementById('finishModal');
+      const card = document.getElementById('finishModalCard');
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        card.classList.remove('scale-95', 'opacity-0');
+        card.classList.add('scale-100', 'opacity-100');
+      }, 10);
+    }
+
+    function closeFinishModal() {
+      const modal = document.getElementById('finishModal');
+      const card = document.getElementById('finishModalCard');
+      card.classList.remove('scale-100', 'opacity-100');
+      card.classList.add('scale-95', 'opacity-0');
+      setTimeout(() => {
+        modal.classList.add('hidden');
+      }, 200);
+    }
+
+    function showToast(message, isSuccess = true) {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toastMessage');
+      const toastIcon = document.getElementById('toastIcon');
+
+      toastMsg.innerText = message;
+      toastIcon.className = isSuccess 
+        ? 'fa-solid fa-circle-check text-emerald-400' 
+        : 'fa-solid fa-circle-exclamation text-rose-400';
+
+      toast.classList.remove('translate-y-16', 'opacity-0', 'pointer-events-none');
+      setTimeout(() => {
+        toast.classList.add('translate-y-16', 'opacity-0', 'pointer-events-none');
+      }, 3000);
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+  </script>
+</body>
+</html>

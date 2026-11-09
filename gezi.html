@@ -58,6 +58,10 @@
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased">
+    <div id="loadingOverlay" class="fixed inset-0 z-[100] bg-slate-50 flex flex-col items-center justify-center gap-3 transition-opacity duration-300">
+        <i class="fa-solid fa-compass fa-spin text-3xl text-sky-600"></i>
+        <p class="text-sm text-slate-500">Seyahatler yükleniyor...</p>
+    </div>
 
     <!-- Üst Başlık (Navbar) -->
     <header class="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-40">
@@ -579,29 +583,37 @@
         }
 
         // Buluttan anlık dinleme (Realtime Sync)
+        window.cloudReady = false;
         onSnapshot(tripDocRef, (snap) => {
             updateCloudStatus("Bulut Bağlı", "bg-emerald-500");
+            const first = !window.cloudReady;
+            window.cloudReady = true;
 
             if (snap.exists()) {
                 const data = snap.data();
                 if (data && Array.isArray(data.trips) && data.trips.length > 0) {
-                    window.trips = data.trips;
-                    if (!window.trips.some(t => t.id === window.activeTripId)) {
-                        window.activeTripId = window.trips[0].id;
-                    }
-                    window.refreshAllViews();
+                    window.applyCloudTrips(data.trips, first);
+                    return;
                 }
-            } else {
-                // Veritabanı boşsa ilk veriyi gönder
+            }
+            // Veritabanı gerçekten boşsa mevcut (örnek) veriyi gönder
+            if (first) {
+                window.applyCloudTrips(window.trips, true);
                 window.syncTripsToCloud();
             }
         }, (error) => {
             console.error("Firestore okuma hatası:", error);
             updateCloudStatus("Bağlantı Hatası", "bg-rose-500");
+            window.hideLoading && window.hideLoading();
         });
 
         // Buluta veri kaydetme
         window.syncTripsToCloud = async function() {
+            // İlk bulut verisi gelmeden yazma: örnek verinin buluttaki gerçek verinin üstüne yazılmasını engeller
+            if (!window.cloudReady) {
+                window.showToast && window.showToast("Bulut henüz bağlanmadı, değişiklik kaydedilmedi.", "error");
+                return;
+            }
             try {
                 updateCloudStatus("Kaydediliyor...", "bg-amber-400 animate-pulse");
                 await setDoc(tripDocRef, {
@@ -687,15 +699,68 @@
         };
 
         // --- Başlangıç Yüklemesi ---
-        window.addEventListener('DOMContentLoaded', () => {
-            activeTripId = trips[0].id;
-            selectedCalendarDateStr = trips[0].startDate;
-            
-            const startD = parseLocalDate(trips[0].startDate);
-            currentCalendarDate = new Date(startD.getFullYear(), startD.getMonth(), 1);
+        const LS_TRIPS = 'rotam_trips_cache';
+        const LS_ACTIVE = 'rotam_active_trip';
 
+        function focusTrip(trip) {
+            activeTripId = trip.id;
+            selectedCalendarDateStr = trip.startDate;
+            activeSelectedDayIndex = 0;
+            const startD = parseLocalDate(trip.startDate);
+            currentCalendarDate = new Date(startD.getFullYear(), startD.getMonth(), 1);
+        }
+
+        window.hideLoading = function() {
+            const el = document.getElementById('loadingOverlay');
+            if (!el) return;
+            el.classList.add('opacity-0', 'pointer-events-none');
+            setTimeout(() => el.remove(), 350);
+        };
+
+        // Buluttan gelen veriyi uygula
+        window.applyCloudTrips = function(cloudTrips, first) {
+            window.trips = cloudTrips;
+            trips = cloudTrips;
+            try { localStorage.setItem(LS_TRIPS, JSON.stringify(cloudTrips)); } catch (e) {}
+
+            if (first) {
+                let saved = null;
+                try { saved = localStorage.getItem(LS_ACTIVE); } catch (e) {}
+                focusTrip(trips.find(t => t.id === saved) || trips[0]);
+            } else if (!trips.some(t => t.id === activeTripId)) {
+                focusTrip(trips[0]);
+            }
             window.refreshAllViews();
+            window.hideLoading();
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            // Önbellekte veri varsa hemen göster (örnek veriyi değil), yoksa yükleniyor ekranı kalsın
+            try {
+                const cached = JSON.parse(localStorage.getItem(LS_TRIPS) || 'null');
+                if (Array.isArray(cached) && cached.length > 0) {
+                    const saved = localStorage.getItem(LS_ACTIVE);
+                    window.trips = trips = cached;
+                    focusTrip(trips.find(t => t.id === saved) || trips[0]);
+                    window.refreshAllViews();
+                    window.hideLoading();
+                }
+            } catch (e) {}
+            // Bulut hiç yanıt vermezse (çevrimdışı) 6 sn sonra yükleniyor ekranını kapat
+            setTimeout(() => {
+                if (!window.cloudReady && !document.getElementById('loadingOverlay')?.classList.contains('opacity-0')) {
+                    window.trips = trips;
+                    focusTrip(trips[0]);
+                    window.refreshAllViews();
+                    window.hideLoading();
+                    showToast("Bulut bağlantısı kurulamadı.", "error");
+                }
+            }, 6000);
         });
+
+        function esc(v) {
+            return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
 
         // --- Tarih Yardımcı Fonksiyonları ---
         function parseLocalDate(dateStr) {
@@ -727,6 +792,7 @@
             return dates;
         }
 
+        window.showToast = (...a) => showToast(...a);
         // --- Bildirim Toast Gösterme ---
         function showToast(message, type = 'success') {
             const toast = document.getElementById('toastNotification');
@@ -765,13 +831,9 @@
         }
 
         function changeActiveTrip(newId) {
-            activeTripId = newId;
-            const trip = getActiveTrip();
-            selectedCalendarDateStr = trip.startDate;
-            activeSelectedDayIndex = 0;
-
-            const startD = parseLocalDate(trip.startDate);
-            currentCalendarDate = new Date(startD.getFullYear(), startD.getMonth(), 1);
+            const trip = trips.find(t => t.id === newId) || trips[0];
+            focusTrip(trip);
+            try { localStorage.setItem(LS_ACTIVE, activeTripId); } catch (e) {}
 
             renderActiveTripOverview();
             renderCalendar();
@@ -793,7 +855,7 @@
                     <span class="flex items-center gap-1.5"><i class="fa-regular fa-calendar text-sky-600"></i> ${formatDisplayDate(trip.startDate)} - ${formatDisplayDate(trip.endDate)}</span>
                     <span class="font-semibold text-slate-700 bg-sky-50 text-sky-700 px-2 py-0.5 rounded-md">${days.length} Gün</span>
                 </div>
-                ${trip.description ? `<p class="text-xs text-slate-500 italic mt-1 line-clamp-2">${trip.description}</p>` : ''}
+                ${trip.description ? `<p class="text-xs text-slate-500 italic mt-1 line-clamp-2">${esc(trip.description)}</p>` : ''}
                 <div class="flex gap-2 mt-2 pt-2 border-t border-slate-100">
                     <button onclick="deleteCurrentTrip()" class="text-[11px] text-rose-500 hover:text-rose-700 font-medium flex items-center gap-1">
                         <i class="fa-regular fa-trash-can"></i> Seyahati Sil
@@ -807,11 +869,10 @@
                 showToast("En az bir seyahat bulunmalıdır.", "error");
                 return;
             }
+            if (!confirm("Bu seyahat kalıcı olarak silinecek. Emin misiniz?")) return;
             trips = trips.filter(t => t.id !== activeTripId);
             window.trips = trips;
-            activeTripId = trips[0].id;
-            selectedCalendarDateStr = trips[0].startDate;
-            activeSelectedDayIndex = 0;
+            focusTrip(trips[0]);
             window.refreshAllViews();
             notifyDataChanged();
             showToast("Seyahat silindi.");
@@ -884,6 +945,22 @@
 
                 grid.appendChild(cell);
             }
+
+            // Sonraki ayın günleri (son satırı tamamla)
+            const filled = (firstDayIndex + totalDaysInMonth) % 7;
+            if (filled !== 0) {
+                for (let i = 1; i <= 7 - filled; i++) {
+                    const cell = document.createElement('div');
+                    cell.className = "py-2 text-slate-300 text-xs";
+                    cell.textContent = i;
+                    grid.appendChild(cell);
+                }
+            }
+        }
+
+        function syncCalendarMonth(dateStr) {
+            const d = parseLocalDate(dateStr);
+            currentCalendarDate = new Date(d.getFullYear(), d.getMonth(), 1);
         }
 
         function prevMonth() {
@@ -992,6 +1069,7 @@
                 btn.onclick = () => {
                     activeSelectedDayIndex = idx;
                     selectedCalendarDateStr = dStr;
+                    syncCalendarMonth(dStr);
                     renderCalendar();
                     renderDayTimeline();
                 };
@@ -1054,15 +1132,15 @@
                                 </button>
                             </div>
                         </div>
-                        <h4 class="text-sm font-bold text-slate-800 mt-2">${item.title}</h4>
+                        <h4 class="text-sm font-bold text-slate-800 mt-2">${esc(item.title)}</h4>
                         ${item.location ? `
                             <p class="text-xs text-slate-500 flex items-center gap-1.5 mt-1">
-                                <i class="fa-solid fa-location-dot text-slate-400"></i> ${item.location}
+                                <i class="fa-solid fa-location-dot text-slate-400"></i> ${esc(item.location)}
                             </p>
                         ` : ''}
                         ${item.notes ? `
                             <p class="text-xs text-slate-600 bg-white/80 p-2.5 rounded-xl border border-slate-100 mt-2.5 whitespace-pre-line">
-                                ${item.notes}
+                                ${esc(item.notes)}
                             </p>
                         ` : ''}
                     </div>
@@ -1191,6 +1269,7 @@
             if (targetIdx !== -1) {
                 activeSelectedDayIndex = targetIdx;
                 selectedCalendarDateStr = targetDateStr;
+                syncCalendarMonth(targetDateStr);
             }
 
             renderDayTimeline();
@@ -1231,13 +1310,13 @@
                 card.className = "p-4 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-slate-50 transition relative group";
                 card.innerHTML = `
                     <div class="flex justify-between items-start">
-                        <h4 class="font-bold text-sm text-slate-800">${place.name}</h4>
+                        <h4 class="font-bold text-sm text-slate-800">${esc(place.name)}</h4>
                         <button onclick="deletePlace('${place.id}')" class="text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition">
                             <i class="fa-regular fa-trash-can text-xs"></i>
                         </button>
                     </div>
-                    ${place.location ? `<p class="text-xs text-sky-600 mt-0.5"><i class="fa-solid fa-location-dot"></i> ${place.location}</p>` : ''}
-                    ${place.note ? `<p class="text-xs text-slate-600 mt-2 bg-white p-2 rounded-lg border border-slate-100">${place.note}</p>` : ''}
+                    ${place.location ? `<p class="text-xs text-sky-600 mt-0.5"><i class="fa-solid fa-location-dot"></i> ${esc(place.location)}</p>` : ''}
+                    ${place.note ? `<p class="text-xs text-slate-600 mt-2 bg-white p-2 rounded-lg border border-slate-100">${esc(place.note)}</p>` : ''}
                 `;
                 container.appendChild(card);
             });
@@ -1283,7 +1362,7 @@
                     <div class="flex items-center justify-between py-1.5 border-b border-slate-100 last:border-none group">
                         <label class="flex items-center gap-2.5 cursor-pointer text-xs ${item.checked ? 'line-through text-slate-400' : 'text-slate-700 font-medium'}">
                             <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleChecklistItem('${item.id}')" class="rounded text-sky-600 focus:ring-sky-500 w-4 h-4 cursor-pointer">
-                            <span>${item.text}</span>
+                            <span>${esc(item.text)}</span>
                         </label>
                         <button onclick="deleteChecklistItem('${item.id}')" class="text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition">
                             <i class="fa-regular fa-trash-can text-xs"></i>
@@ -1293,7 +1372,7 @@
 
                 groupDiv.innerHTML = `
                     <h5 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center justify-between">
-                        <span>${catName}</span>
+                        <span>${esc(catName)}</span>
                         <span class="text-[10px] font-normal lowercase bg-slate-200 px-2 py-0.5 rounded-full text-slate-600">${items.filter(i=>i.checked).length}/${items.length}</span>
                     </h5>
                     <div class="space-y-1">${itemsHtml}</div>
@@ -1354,8 +1433,8 @@
                     <div class="flex items-center justify-between py-1.5 border-b border-slate-100 last:border-none group">
                         <label class="flex items-center gap-2.5 cursor-pointer text-xs ${item.checked ? 'line-through text-slate-400' : 'text-slate-700 font-medium'}">
                             <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleShoppingItem('${item.id}')" class="rounded text-sky-600 focus:ring-sky-500 w-4 h-4 cursor-pointer">
-                            <span>${item.text}</span>
-                            ${item.target ? `<span class="text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded ml-1 font-normal">${item.target}</span>` : ''}
+                            <span>${esc(item.text)}</span>
+                            ${item.target ? `<span class="text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded ml-1 font-normal">${esc(item.target)}</span>` : ''}
                         </label>
                         <button onclick="deleteShoppingItem('${item.id}')" class="text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition">
                             <i class="fa-regular fa-trash-can text-xs"></i>
@@ -1365,7 +1444,7 @@
 
                 groupDiv.innerHTML = `
                     <h5 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center justify-between">
-                        <span>${catName}</span>
+                        <span>${esc(catName)}</span>
                         <span class="text-[10px] font-normal lowercase bg-slate-200 px-2 py-0.5 rounded-full text-slate-600">${items.filter(i=>i.checked).length}/${items.length}</span>
                     </h5>
                     <div class="space-y-1">${itemsHtml}</div>
@@ -1470,6 +1549,7 @@
             const startD = parseLocalDate(startDate);
             currentCalendarDate = new Date(startD.getFullYear(), startD.getMonth(), 1);
 
+            try { localStorage.setItem(LS_ACTIVE, activeTripId); } catch (e) {}
             closeModal('newTripModal');
             document.getElementById('tripNameInput').value = '';
             document.getElementById('tripDescInput').value = '';
